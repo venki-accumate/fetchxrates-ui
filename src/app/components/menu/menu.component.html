@@ -1,0 +1,41 @@
+<mat-nav-list class="menu-container">
+  <!-- Header with close button -->
+  <div class="menu-header">
+    <div class="menuicon-container-m">
+      <mat-icon class="matIconClose" (click)="closeMenu()">keyboard_double_arrow_left</mat-icon>
+    </div>
+  </div>
+
+  <!-- Theme toggle at top -->
+  <div class="menu-content">
+    <div class="menuicon-container theme-toggle" (click)="toggleTheme()">
+      <mat-icon class="matIcon">{{ currentTheme === 'light' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+      <span class="iconText">{{ currentTheme === 'light' ? 'Dark' : 'Light' }}</span>
+    </div>
+
+    <!-- Menu items (only show if menuItems is not empty) -->
+    <ng-container *ngIf="menuItems && objectKeys(menuItems).length > 0">
+      <ng-container *ngFor="let item of menuItems | keyvalue : asIsOrder">
+        <div class="menuicon-container" (click)="callMethod(item.value)">
+          <mat-icon class="matIcon">{{item.value}}</mat-icon>
+          <span class="iconText">{{item.key}}</span>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+
+  <!-- User section with sign out - positioned at bottom -->
+  <div class="menu-footer">
+    <div class="menuicon-container userIcon" 
+         *ngIf="userName" 
+         (mouseenter)="hovering = true" 
+         (mouseleave)="hovering = false">
+      <mat-icon class="matIcon">person</mat-icon>
+      <span class="iconText">{{ userName }}</span>
+      
+      <div class="signout-popup" *ngIf="hovering" (click)="userSignout()">
+        Sign Out
+      </div>
+    </div>
+  </div>
+</mat-nav-list>

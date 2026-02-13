@@ -1,0 +1,72 @@
+<div class="api-container">
+  <div class="api-header">
+    <h1>API Documentation</h1>
+    <p>Integrate FetchXRates into your application</p>
+  </div>
+
+  <div class="api-section">
+    <h2>Authentication</h2>
+    <p>All API requests require authentication using your API key in the header:</p>
+    <div class="code-block">
+      <pre><code>Authorization: Bearer {{ apiKey }}</code></pre>
+    </div>
+  </div>
+
+  <div class="api-section">
+    <h2>Get Latest Rates</h2>
+    <div class="endpoint">
+      <span class="method">GET</span>
+      <span class="url">https://api.fetchxrates.com/v1/latest</span>
+    </div>
+    <p>Retrieve the latest exchange rates</p>
+    <div class="code-block">
+      <pre><code>{{ '{' }}
+  "base": "USD",
+  "date": "2026-02-07",
+  "rates": {{ '{' }}
+    "EUR": 0.92,
+    "GBP": 0.79,
+    "JPY": 148.50,
+    "AUD": 1.56
+  {{ '}' }}
+{{ '}' }}</code></pre>
+    </div>
+  </div>
+
+  <div class="api-section">
+    <h2>Get Historical Rates</h2>
+    <div class="endpoint">
+      <span class="method">GET</span>
+      <span class="url">https://api.fetchxrates.com/v1/historical?date=2026-01-01</span>
+    </div>
+    <p>Retrieve exchange rates for a specific date</p>
+  </div>
+
+  <div class="api-section">
+    <h2>Convert Currency</h2>
+    <div class="endpoint">
+      <span class="method">GET</span>
+      <span class="url">https://api.fetchxrates.com/v1/convert?from=USD&to=EUR&amount=100</span>
+    </div>
+    <p>Convert an amount from one currency to another</p>
+    <div class="code-block">
+      <pre><code>{{ '{' }}
+  "from": "USD",
+  "to": "EUR",
+  "amount": 100,
+  "result": 92.00,
+  "rate": 0.92,
+  "date": "2026-02-07"
+{{ '}' }}</code></pre>
+    </div>
+  </div>
+
+  <div class="api-section">
+    <h2>Rate Limits</h2>
+    <ul>
+      <li><strong>Starter:</strong> 10 requests per day</li>
+      <li><strong>Professional:</strong> Unlimited requests</li>
+      <li><strong>Enterprise:</strong> Unlimited requests + priority support</li>
+    </ul>
+  </div>
+</div>

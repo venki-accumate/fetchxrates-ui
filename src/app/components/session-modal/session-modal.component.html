@@ -1,0 +1,8 @@
+@if ((showModal$ | async) && shouldShowModal) {
+  <div class="modal">
+    <div class="modal-content">
+      <p>Your session will expire in 5 minutes. Click "Continue" to stay logged in.</p>
+      <button (click)="onExtendSession()" class="custom-button">Continue</button>
+    </div>
+  </div>
+}

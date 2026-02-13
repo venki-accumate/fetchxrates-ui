@@ -1,0 +1,19 @@
+<ngx-spinner 
+  bdColor="rgba(0,0,0,0.8)" 
+  size="large" 
+  color="#7dd3fc" 
+  type="line-scale"
+  [fullScreen]="true">
+  <p style="color: white; margin-top: 20px;">Loading...</p>
+</ngx-spinner>
+
+<div class="checkin-page" *ngIf="!apiCallPending">
+  <!-- Pricing Section with integrated signup fields -->
+  <app-pricing 
+    [showSignupFields]="showSignupFields"
+    [userData]="userData"
+    [termsAccepted]="termsAccepted"
+    [error]="error"
+    (userDataChange)="userData = $event"
+    (termsAcceptedChange)="termsAccepted = $event"></app-pricing>
+</div>

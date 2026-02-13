@@ -1,0 +1,67 @@
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-content">
+      <div class="navbar-left">
+        <a routerLink="/dashboard" class="logo" (click)="closeMobileMenu()">
+          <span class="logo-part logo-fetch">Fetch</span>
+          <img src="textLogo.png" alt="X" class="logo-image">
+          <span class="logo-part logo-rates">ates</span>
+        </a>
+
+        <div class="nav-links" [class.active]="mobileMenuOpen()" *ngIf="!hideMenu">
+          @for (item of menuItems; track item.route) {
+            <a 
+              [routerLink]="item.route" 
+              routerLinkActive="active"
+              (click)="closeMobileMenu()"
+              class="nav-link">
+              <mat-icon>{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
+          }
+        </div>
+      </div>
+
+      <div class="navbar-right">
+        <button class="theme-toggle" (click)="toggleTheme()" aria-label="Toggle theme">
+          @if (isDarkTheme()) {
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          } @else {
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          }
+        </button>
+
+        <div class="user-menu" (mouseenter)="showUserMenu.set(true)" (mouseleave)="showUserMenu.set(false)">
+          <div class="user-name">
+            <mat-icon>person</mat-icon>
+            <span>{{ userName() }}</span>
+          </div>
+          @if (showUserMenu()) {
+            <div class="user-dropdown">
+              <button (click)="logout()">
+                <mat-icon>logout</mat-icon>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          }
+        </div>
+
+        <button class="mobile-menu-btn" (click)="toggleMobileMenu()" aria-label="Toggle menu">
+          <span class="hamburger" [class.open]="mobileMenuOpen()"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>

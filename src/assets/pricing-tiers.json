@@ -1,0 +1,103 @@
+{
+  "pricing": {
+    "monthly": [10, 34, 68],
+    "yearly": [100, 340, 680]
+  },
+  "tiers": {
+    "dashboard": [
+      {
+        "name": "Basic",
+        "description": "Perfect for individual users managing personal finances",
+        "popular": false,
+        "features": [
+          "Single user dashboard access",
+          "10,000 data points per month",
+          "Basic reporting tools",
+          "Email support",
+          "Mobile responsive interface"
+        ],
+        "cta": "Get started",
+        "id": "basic_dashboard"
+      },
+      {
+        "name": "Professional",
+        "description": "Ideal for small teams collaborating on financial data",
+        "popular": true,
+        "badgeText": "RECOMMENDED",
+        "features": [
+          "Up to 5 user dashboard access",
+          "200,000 data points per month",
+          "Advanced analytics & charts",
+          "Priority support",
+          "Custom dashboard widgets",
+          "Export to Excel/CSV"
+        ],
+        "cta": "Get started",
+        "id": "professional_dashboard"
+      },
+      {
+        "name": "Business",
+        "description": "Enterprise solution for large organizations",
+        "popular": false,
+        "features": [
+          "Unlimited user dashboard access",
+          "600,000 data points per month",
+          "White-label dashboard options",
+          "Dedicated account manager",
+          "Custom integrations",
+          "99.9% uptime SLA"
+        ],
+        "cta": "Get started",
+        "id": "business_dashboard"
+      }
+    ],
+    "restapi": [
+      {
+        "name": "Basic",
+        "description": "For small applications and startups",
+        "popular": false,
+        "features": [
+          "10,000 API requests per month",
+          "Latest + historical rates",
+          "RBA data source",
+          "Base currency - AUD",
+          "Email support",
+          "Full API documentation"
+        ],
+        "cta": "Get started",
+        "id": "basic_api"
+      },
+      {
+        "name": "Professional",
+        "description": "For growing businesses with higher volume",
+        "popular": true,
+        "badgeText": "RECOMMENDED",
+        "features": [
+          "200,000 API requests per month",
+          "Multiple data sources (RBA, ECB)",
+          "Base Currency choice of AUD or EUR",
+          "Batch requests",
+          "Priority support",
+          "Advanced analytics"
+        ],
+        "cta": "Get started",
+        "id": "professional_api"
+      },
+      {
+        "name": "Business",
+        "description": "For established companies with large-scale needs",
+        "popular": false,
+        "features": [
+          "600,000 API requests per month",
+          "All data sources (RBA, ECB, Fed, BOE)",
+          "Base Currency: AUD, EUR, GBP, USD",
+          "Dedicated account manager",
+          "99.9% uptime SLA",
+          "Custom integration support"
+        ],
+        "cta": "Get started",
+        "id": "business_api"
+      }
+    ]
+  }
+}

@@ -1,0 +1,226 @@
+.login-container {
+  display: flex;
+  justify-content: left;
+  min-height: 100vh;
+  background-image: url('/logoDigital.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.login-box {
+  max-width: 25rem;
+  width: 100%;
+  padding: 2rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  text-align: center;
+  background: radial-gradient(circle at top, #afe2af 0%, #ffffff 50%);
+  margin: 30px;
+  border: 1px solid #c6c0f8;
+  position: absolute;
+  right: 2.5rem;
+  height: fit-content;
+  min-height: 30rem;
+  max-height: 90vh;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 0.5rem 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.divider {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.signup-text {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+button {
+  width: 300px;
+  margin-top: 15px;
+  font-size: 15px;
+}
+
+.welcomeSpan {
+  font-size: 1.1rem;
+  color: #000;
+  display: block;
+  margin-bottom: 0.2rem;
+  padding-right: 0.4rem;
+}
+
+.logoDiv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1rem;
+  margin-left: 10px;
+}
+
+.app-name {
+  display: flex;
+  align-items: center;
+}
+
+.logo-rates, .logo-fetch {
+  font-family: 'Courier New', 'Courier', monospace;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #000;
+  letter-spacing: -0.02em;
+}
+
+.logo-image {
+  height: 20px;
+  width: auto;
+  margin: -2px -2px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.finLogo {
+  height: 50px;
+  width: 50px;
+}
+
+.custom-button {
+  background-color: #22b71b !important;
+  color: white !important;
+  height: 40px;
+  width: 12.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.custom-button:hover:not(:disabled) {
+  background-color: #1e9f18 !important;
+}
+
+.custom-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.buttonDiv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Google button css */
+.gsi-material-button {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -webkit-appearance: none;
+  background-color: WHITE;
+  background-image: none;
+  border: 1px solid #747775;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: 'Roboto', arial, sans-serif;
+  font-size: 15px;
+  height: 40px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 12px;
+  position: relative;
+  text-align: center;
+  -webkit-transition: background-color .218s, border-color .218s, box-shadow .218s;
+  transition: background-color .218s, border-color .218s, box-shadow .218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 12.5rem;
+  max-width: 400px;
+  min-width: min-content;
+}
+
+.gsi-material-button .gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  -webkit-align-items: center;
+  align-items: center;
+  display: flex;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-flex-wrap: nowrap;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+  font-family: 'Roboto', arial, sans-serif;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.gsi-material-button .gsi-material-button-state {
+  -webkit-transition: opacity .218s;
+  transition: opacity .218s;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.gsi-material-button:disabled {
+  cursor: default;
+  background-color: #ffffff61;
+  border-color: #1f1f1f1f;
+}
+
+.gsi-material-button:disabled .gsi-material-button-contents {
+  opacity: 38%;
+}
+
+.gsi-material-button:disabled .gsi-material-button-icon {
+  opacity: 38%;
+}
+
+.gsi-material-button:not(:disabled):active .gsi-material-button-state,
+.gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 12%;
+}
+
+.gsi-material-button:not(:disabled):hover {
+  -webkit-box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+}
+
+.gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 8%;
+}

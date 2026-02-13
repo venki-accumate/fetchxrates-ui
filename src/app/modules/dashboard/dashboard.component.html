@@ -1,0 +1,47 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <div class="user-info" *ngIf="currentUser">
+      <span>Welcome, {{ currentUser.name }}</span>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <h3>API Calls Today</h3>
+        <p class="stat-value">1,234</p>
+      </div>
+      <div class="stat-card">
+        <h3>Subscription Status</h3>
+        <p class="stat-value">{{ currentUser?.subscriptionStatus }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>Current Plan</h3>
+        <p class="stat-value">{{ currentUser?.subscriptionPlan }}</p>
+      </div>
+      <div class="stat-card">
+        <h3>API Key</h3>
+        <p class="stat-value">••••••••</p>
+      </div>
+    </div>
+
+    <div class="quick-links">
+      <h2>Quick Access</h2>
+      <div class="links-grid">
+        <a routerLink="/api" class="link-card">
+          <h3>API Documentation</h3>
+          <p>View API endpoints and usage examples</p>
+        </a>
+        <a routerLink="/dashboard/usage" class="link-card">
+          <h3>Usage Analytics</h3>
+          <p>Monitor your API usage and trends</p>
+        </a>
+        <a routerLink="/dashboard/settings" class="link-card">
+          <h3>Settings</h3>
+          <p>Manage your account and preferences</p>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

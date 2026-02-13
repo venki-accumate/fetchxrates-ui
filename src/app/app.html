@@ -1,0 +1,13 @@
+<div *ngIf="showLayout && showNavbar">
+  <app-navbar [hideMenu]="hideMenuItems"></app-navbar>
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<!-- Login page without layout -->
+<div *ngIf="!showLayout">
+  <router-outlet></router-outlet>
+</div>
+
+<app-session-modal></app-session-modal>
