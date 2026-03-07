@@ -15,9 +15,9 @@ const routes: Routes = [
     data: { hideLayout: true }
   },
   {
-    path: 'checkin',
-    loadChildren: () => import('./modules/checkin/checkin.module').then(m => m.CheckinModule),
+    path: 'checkin',  
     canActivate: [authGuard],
+    loadChildren: () => import('./modules/checkin/checkin.module').then(m => m.CheckinModule),
     data: { hideLayout: true }
   },
   {
@@ -27,20 +27,21 @@ const routes: Routes = [
   },
     {
     path: 'payment-success',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./components/stripe-success/stripe-success.component')
         .then(c => c.StripeSuccessComponent),
-    canActivate: [authGuard]
+    data: { hideLayout: true }
   },
   {
-    path: 'dashboard',
-    loadChildren: () => import('./modules/dashboard/dashboard.module').then(m => m.DashboardModule),
-    canActivate: [authGuard]
+    path: 'dashboard', 
+    canActivate: [authGuard],
+    loadChildren: () => import('./modules/dashboard/dashboard.module').then(m => m.DashboardModule)
   },
   {
     path: 'api',
-    loadChildren: () => import('./modules/api/api.module').then(m => m.ApiModule),
-    canActivate: [authGuard, subscriptionGuard]
+    canActivate: [authGuard, subscriptionGuard],
+    loadChildren: () => import('./modules/api/api.module').then(m => m.ApiModule)
   },
   {
     path: '**',

@@ -18,9 +18,10 @@ export class StripeSuccessComponent implements OnInit {
   private route: ActivatedRoute
   ) {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     localStorage.removeItem('stripeFlow');
     this.username = localStorage.getItem('username');
+    await this.authState.hydrateFromAmplify();
     const sessionId = this.route.snapshot.queryParamMap.get('session_id');
     if(sessionId) {
       this.updateUserStatus(sessionId);

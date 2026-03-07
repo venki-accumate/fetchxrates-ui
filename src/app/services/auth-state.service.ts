@@ -1,6 +1,6 @@
   import { Injectable } from '@angular/core';
   import { BehaviorSubject, Observable } from 'rxjs';
-  import { getCurrentUser, signOut } from 'aws-amplify/auth';
+  import { fetchAuthSession, getCurrentUser, signOut } from 'aws-amplify/auth';
 
   @Injectable({ providedIn: 'root' })
   export class AuthStateService {
@@ -19,19 +19,36 @@
      * Hydrate user from Amplify session on app start
      */
     async hydrateFromAmplify(): Promise<void> {
-      try {
-        const user = await getCurrentUser();
-        this.userSubject.next(user ?? null);
-      } catch {
+    try {
+      const session = await fetchAuthSession();
+      const idToken = session?.tokens?.idToken;
+
+      if (!idToken) {
+        this.setUser(null);
         this.userSubject.next(null);
+        return;
       }
+
+      const user = await getCurrentUser();
+      const email = idToken.payload?.['email'] as string | undefined;
+
+      const hydratedUser = {
+        ...user,
+        email
+      };
+
+      await this.setUser(hydratedUser ?? null);
+
+    } catch {
+      this.userDataSubject.next(null);
     }
+  }
 
     /**
      * Set user object from Amplify user and extract userData
      * @param amplifyUser Raw user object from Amplify getCurrentUser()
      */
-    setUser(amplifyUser: any): void {
+    async setUser(amplifyUser: any) {
       if (!amplifyUser) {
         this.userSubject.next(null);
         return;
