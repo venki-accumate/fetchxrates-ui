@@ -31,7 +31,7 @@ const routes: Routes = [
     loadComponent: () =>
       import('./components/stripe-success/stripe-success.component')
         .then(c => c.StripeSuccessComponent),
-    data: { hideLayout: true }
+    data: { hideMenuItems: true }
   },
   {
     path: 'dashboard', 

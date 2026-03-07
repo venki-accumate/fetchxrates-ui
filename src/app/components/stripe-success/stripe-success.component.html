@@ -1,27 +1,47 @@
 <div class="success-wrap">
   <div class="success-card" role="status" aria-live="polite">
-    <div class="success-icon" aria-hidden="true">✓</div>
 
-    <h1 class="success-title" *ngIf="sessionId">Congratulations!</h1>
-    <p class="success-subtitle" *ngIf="sessionId">Your payment went through successfully.</p>
+    <!-- Header -->
+    <div class="card-header">
+      <div class="success-icon" aria-hidden="true">✓</div>
+      <div class="header-text">
+        <h1 class="card-title">Payment Successful!</h1>
+        <p class="card-subtitle">Subscription activation in progress</p>
+      </div>
+    </div>
 
-    <div class="success-body">
-      <p class="success-text">
-        Thank you <span class="success-name">{{ username }}</span> for registering with us.
-      </p>
-
-      <p class="success-text">
-        We’re currently setting up your account. You should gain access shortly.
-      </p>
-
-      <p class="success-note">
-        You’ll receive an email once your account is active — this can take up to
-        <strong>30 minutes</strong>.
+    <!-- Body -->
+    <div class="card-body">
+      @if (username) {
+        <p class="welcome-text">Welcome, <strong>{{ username }}</strong>! Thank you for subscribing to FetchXRates.</p>
+      }
+      <p class="info-text">
+        We're setting up your account. This usually takes a few minutes.
       </p>
     </div>
 
-    <div class="success-help">
-      Didn’t get an email? Check spam/junk, or try again in a few minutes.
+    <!-- Auto-refresh notice -->
+    <div class="auto-notice">
+      <span class="notice-icon" aria-hidden="true">🔄</span>
+      <div class="notice-content">
+        <strong>This page will automatically redirect</strong> once your subscription is active.
+        <br>No action required — just leave this tab open.
+      </div>
     </div>
+
+    <!-- Polling status -->
+    @if (pollMessage()) {
+      <div class="poll-status" [class.poll-done]="!isPolling() && pollCount() > 0">
+        <span class="poll-dot" [class.pulsing]="isPolling()" aria-hidden="true"></span>
+        <span class="poll-text">{{ pollMessage() }}</span>
+      </div>
+    }
+
+    <!-- Help -->
+    <p class="help-text">
+      Didn't receive a confirmation email? Check your spam folder or contact
+      <a href="mailto:support@fetchxrates.com">support@fetchxrates.com</a>.
+    </p>
+
   </div>
 </div>

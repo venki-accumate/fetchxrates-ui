@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, map } from 'rxjs';
+import { filter } from 'rxjs';
 import { SessionService } from './services/session.service';
 import { EventBusService } from './services/event-bus.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -39,24 +39,26 @@ export class AppComponent implements OnInit {
   }
 
  ngOnInit(): void {
-  const hideLayout$ = this.router.events.pipe(
-    filter(e => e instanceof NavigationEnd),
-    map(() => {
-      let r: ActivatedRoute | null = this.activatedRoute;
-      while (r?.firstChild) r = r.firstChild;
-      return !!r?.snapshot.data?.['hideLayout'];
-    }),
-    takeUntilDestroyed(this.destroyRef)
-  );
+  const resolveLeafData = (): Record<string, any> => {
+    let r: ActivatedRoute | null = this.activatedRoute;
+    while (r?.firstChild) r = r.firstChild;
+    return r?.snapshot.data ?? {};
+  };
 
-  hideLayout$.subscribe(hideLayout => {
-    this.showLayout = !hideLayout;
+  this.router.events.pipe(
+    filter(e => e instanceof NavigationEnd),
+    takeUntilDestroyed(this.destroyRef)
+  ).subscribe(() => {
+    const data = resolveLeafData();
+    this.showLayout = !data['hideLayout'];
+    this.hideMenuItems = !!data['hideMenuItems'];
     this.sessionService.startSessionTimer();
   });
 
-  let r: ActivatedRoute | null = this.activatedRoute;
-  while (r?.firstChild) r = r.firstChild;
-  this.showLayout = !r?.snapshot.data?.['hideLayout'];
+  // Set initial values synchronously for the first load
+  const data = resolveLeafData();
+  this.showLayout = !data['hideLayout'];
+  this.hideMenuItems = !!data['hideMenuItems'];
 }
 
 }

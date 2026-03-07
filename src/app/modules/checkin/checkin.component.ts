@@ -103,7 +103,8 @@ export class CheckinComponent implements OnInit {
   private userExists(userData: any): void {
     this.authState.setUserData(userData);
     // Check subscription status
-    if (userData.subscription === 'Active') {
+    if (userData.status === 'active' 
+      && userData.substatus === 'subscription_created_active') {
       const homePage = userData.homePage || '/dashboard';
       this.spinner.hide();
       this.router.navigate([homePage]);
