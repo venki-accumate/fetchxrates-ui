@@ -66,6 +66,14 @@
               "extractLicenses": false,
               "sourceMap": true,
               "aot": true
+            },
+            "local": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.local.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -84,7 +92,7 @@
               "buildTarget": "fetchxrates-ui:build:development"
             },
             "ssl": {
-              "buildTarget": "fetchxrates-ui:build:development",
+              "buildTarget": "fetchxrates-ui:build:local",
               "ssl": true
             }
           },

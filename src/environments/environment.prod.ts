@@ -1,5 +1,7 @@
 export const environment = {
-  production: true,
-  loginRedirectUrl: 'https://your-production-url.com',
-  backendUrl: 'https://your-api-url.com'
-};
+    production: false,
+    profile: 'dev',
+    backendUrl: 'https://uapi.fetchxrates.com',
+    loginRedirectUrl: 'https://uat.fetchxrates.com/login',
+    logoutRedirectUrl: 'https://uat.fetchxrates.com/logout'
+  };
