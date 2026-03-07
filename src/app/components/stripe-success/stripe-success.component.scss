@@ -1,124 +1,162 @@
+/* -- Page wrapper ------------------------------------------- */
 .success-wrap {
-  min-height: 70vh;
+  min-height: calc(100vh - 64px);
   display: grid;
   place-items: center;
   padding: 24px;
-  background: radial-gradient(900px 500px at 20% 10%, rgba(129, 178, 154, 0.18), transparent 60%),
-              radial-gradient(900px 500px at 80% 0%, rgba(242, 204, 143, 0.20), transparent 55%),
-              radial-gradient(900px 700px at 50% 100%, rgba(224, 122, 95, 0.16), transparent 60%);
+  background: var(--bg-secondary);
 }
 
+/* -- Card --------------------------------------------------- */
 .success-card {
-  width: min(720px, 100%);
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 18px;
-  padding: 28px;
-  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.12);
-  backdrop-filter: blur(10px);
+  width: min(600px, 100%);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 24px var(--shadow);
+}
+
+/* -- Header ------------------------------------------------- */
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
 }
 
 .success-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   color: #fff;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(34, 197, 94, 0.92));
-  box-shadow: 0 12px 25px rgba(16, 185, 129, 0.25);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.35);
 }
 
-.success-title {
-  margin: 14px 0 4px;
-  font-size: 28px;
-  letter-spacing: -0.02em;
-  color: #0f172a;
+.header-text { flex: 1; }
+
+.card-title {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
 }
 
-.success-subtitle {
-  margin: 0 0 18px;
-  color: rgba(15, 23, 42, 0.68);
-  font-size: 14.5px;
+.card-subtitle {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-muted);
 }
 
-.success-body {
-  padding: 16px;
-  border-radius: 14px;
-  background: rgba(248, 250, 252, 0.85);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+/* -- Body --------------------------------------------------- */
+.card-body {
+  margin-bottom: 18px;
 }
 
-.success-text {
-  margin: 0 0 10px;
-  color: rgba(15, 23, 42, 0.82);
-  line-height: 1.55;
+.welcome-text {
+  margin: 0 0 8px;
   font-size: 15px;
+  color: var(--text-primary);
+  line-height: 1.6;
+
+  strong { color: var(--accent); }
 }
 
-.success-text:last-child {
-  margin-bottom: 0;
-}
-
-.success-name {
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.success-note {
-  margin: 10px 0 0;
-  color: rgba(15, 23, 42, 0.70);
-  line-height: 1.55;
+.info-text {
+  margin: 0;
   font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 
-.success-actions {
+/* -- Auto-refresh notice ------------------------------------ */
+.auto-notice {
   display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(var(--accent-rgb), 0.07);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+
+  .notice-icon {
+    font-size: 17px;
+    line-height: 1.5;
+    flex-shrink: 0;
+  }
+
+  .notice-content {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+
+    strong { color: var(--text-primary); }
+  }
+}
+
+/* -- Polling status ----------------------------------------- */
+.poll-status {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-}
-
-.btn {
-  appearance: none;
-  border: 1px solid transparent;
-  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   padding: 10px 14px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease;
+  margin-bottom: 16px;
+  transition: border-color 300ms ease;
+
+  &.poll-done {
+    border-color: rgba(var(--accent-rgb), 0.25);
+  }
 }
 
-.btn:active {
-  transform: translateY(1px);
+.poll-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 300ms ease;
+
+  &.pulsing {
+    background: var(--accent);
+    animation: poll-pulse 1.5s ease-in-out infinite;
+  }
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #16a34a, #22c55e);
-  color: #fff;
-  box-shadow: 0 14px 28px rgba(34, 197, 94, 0.22);
+@keyframes poll-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1);    }
+  50%       { opacity: 0.35; transform: scale(0.78); }
 }
 
-.btn-primary:hover {
-  box-shadow: 0 18px 34px rgba(34, 197, 94, 0.28);
+.poll-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
 }
 
-.btn-ghost {
-  background: rgba(15, 23, 42, 0.04);
-  color: rgba(15, 23, 42, 0.82);
-  border-color: rgba(15, 23, 42, 0.10);
-}
-
-.btn-ghost:hover {
-  background: rgba(15, 23, 42, 0.06);
-  border-color: rgba(15, 23, 42, 0.14);
-}
-
-.success-help {
-  margin-top: 14px;
+/* -- Help text ---------------------------------------------- */
+.help-text {
+  margin: 0;
   font-size: 12.5px;
-  color: rgba(15, 23, 42, 0.58);
+  color: var(--text-muted);
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover { text-decoration: underline; }
+  }
 }
