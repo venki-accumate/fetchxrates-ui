@@ -16,6 +16,11 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 import { Amplify } from 'aws-amplify';
 import { environment } from '../environments/environment';
 import { provideZoneChangeDetection } from '@angular/core';
+import { StripeSuccessComponent } from './components/stripe-success/stripe-success.component';
+import { ButtonBarComponent } from './components/button-bar/button-bar.component';
+import { ExcelReportComponent } from './components/excel-report/excel-report.component';
+import { CsvReportComponent } from './components/csv-report/csv-report.component';
+import { PdfReportComponent } from './components/pdf-report/pdf-report.component';
 
 Amplify.configure({
   Auth: {
@@ -67,7 +72,12 @@ Amplify.configure({
     MatIconModule,
     MatListModule,
     MatSnackBarModule,
-    NavbarComponent
+    NavbarComponent,
+    StripeSuccessComponent,
+    ButtonBarComponent,
+    ExcelReportComponent,
+    CsvReportComponent,
+    PdfReportComponent
   ],
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),

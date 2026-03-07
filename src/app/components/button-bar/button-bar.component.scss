@@ -1,0 +1,45 @@
+/* CSS for bottom button bar - Start */
+.button-bar {
+  position: fixed;
+  bottom: 20px; 
+  left: 50%; 
+  transform: translateX(-50%); /* Center alignment */
+  width: 95%; /* Reduce the width of the bar */
+  max-width: 700px; /* Ensure it doesn't get too wide on large screens */
+  background-color: var(--button-bar); /* Purple color */
+  color: white;
+  display: flex;
+  justify-content: space-between; /* Left and Right alignment */
+  align-items: center;
+  padding: 8px 16px; /* Reduce padding for a shorter height */
+  border-radius: 12px; /* Rounded edges for the bar */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  z-index: 1000; /* Ensure it stays on top */
+}
+
+/* Button Styles */
+.button-bar .btn {
+  background-color: var(--button-bar); /* Slightly darker purple for buttons */
+  color: white;
+  padding: 8px 16px; /* Compact padding for smaller buttons */
+  font-size: 15px; /* Slightly smaller font */
+  font-weight: bold;
+  border: none; /* Remove the border */
+  border-radius: 8px; /* Rounded button edges */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.button-bar .btn:hover {
+  background-color: var(--button-bar-hover); /* Darker purple on hover */
+}
+
+/* Specific Button Styling (Optional, can be removed if not needed) */
+.button-bar .left-button {
+  margin-right: auto; /* Optional: pushes "Go Back" button to the left */
+}
+
+.button-bar .right-button {
+  margin-left: auto; /* Optional: pushes "Generate Report" button to the right */
+}
+/* End CSS for button */

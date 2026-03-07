@@ -19,12 +19,15 @@ body:not(.dark-theme) {
   --accent: #22b71b;
   --accent-rgb: 34, 183, 27;
   --accent-hover: #1a8f15;
+  --accent-hover-light: #b3f6af;
   --accent-secondary: #3b82f6;
   --border-green: #275d24;
+  --button-bar: #2e7d32;
   --code-bg: #f9fafb;
   --success: #22b71b;
   --warning: #f59e0b;
   --danger: #ef4444;
+  --border-black: none;
 }
 
 /* Dark Theme */
@@ -46,11 +49,14 @@ body.dark-theme {
   --accent-rgb: 34, 183, 27;
   --accent-hover: #1e9f18;
   --accent-secondary: #3b82f6;
+  --accent-hover-light: #6b6d6b;
   --border-green: #275d24;
+  --button-bar: #2e7d32;
   --code-bg: #1a1a1a;
   --success: #22b71b;
   --warning: #fbbf24;
   --danger: #ef4444;
+  --border-black: #4e4c4c;
 }
 
 * {
@@ -61,7 +67,7 @@ body.dark-theme {
 
 html, body {
   height: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: "Space Grotesk", -apple-system, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   color: var(--text-primary);
@@ -103,4 +109,68 @@ button {
 input, textarea, select {
   font-family: inherit;
   outline: none;
+}
+
+
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-navbar);
+  text-decoration: none;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+}
+/* Logo CSS */
+.logo-part {
+  font-family: 'Courier New', 'Courier', monospace;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.logo-fetch {
+  color: var(--text-navbar);
+}
+
+.logo-rates {
+  color: var(--text-navbar);
+}
+
+.logo-image {
+  height: 30px;
+  width: auto;
+  margin: -2px -2px;
+  display: block;
+}
+/* End of Logo CSS */
+
+mat-icon {
+  color: var(--accent) !important;
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+.mat-mdc-menu-content {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-black) !important;
+}
+
+/* ── Snackbar theme ──────────────────────────────────────────────────────── */
+.mat-mdc-snack-bar-container.snackbar-success {
+  --mat-snackbar-container-color: #22b71b;
+  --mat-snackbar-supporting-text-color: #ffffff;
+  --mat-snackbar-supporting-text-weight: 600;
+}
+
+.mat-mdc-snack-bar-container.snackbar-error {
+  --mat-snackbar-container-color: #ef4444;
+  --mat-snackbar-supporting-text-color: #ffffff;
+  --mat-snackbar-supporting-text-weight: 600;
 }

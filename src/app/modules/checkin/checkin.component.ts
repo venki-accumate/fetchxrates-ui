@@ -1,8 +1,13 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { AuthStateService } from '../../services/auth-state.service';
 import { FetchXRApiService } from '../../services/fetchXR-api.service';
+import { firstValueFrom } from 'rxjs';
+import { StripeCheckoutService, CheckoutSessionResponse } from '../../services/stripe-checkout.service';
+import { fetchAuthSession } from '@aws-amplify/core';
+import { getCurrentUser } from 'aws-amplify/auth';
+
 
 @Component({
   selector: 'app-checkin',
@@ -14,7 +19,8 @@ export class CheckinComponent implements OnInit {
   apiCallPending = true;
   error = '';
   showSignupFields = false;
-  
+  selectedPlan: string = '';
+
   // Signup form data
   userData = {
     firstName: '',
@@ -26,74 +32,118 @@ export class CheckinComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private authState: AuthStateService,
     private apiService: FetchXRApiService,
-    private spinner: NgxSpinnerService
-  ) {
-    // Expose this component instance for child components
-    (window as any).checkinComponentInstance = this;
-  }
+    private spinner: NgxSpinnerService,
+    private stripeCheckoutService: StripeCheckoutService,
+    private cdRef: ChangeDetectorRef
+  ) { }
 
   async ngOnInit(): Promise<void> {
     await this.handleUserDataAndNavigation();
   }
 
   private async handleUserDataAndNavigation(): Promise<void> {
-    const user = this.authState.getUser();
-    
+    const user = await this.checkIfLoggedIn();
+    console.log('Checkin user:', user);
     if (!user) {
-      this.apiCallPending = false;
-      this.showSignupFields = true;
+      console.log('No authenticated user found');
+      this.enterSignupFlowFromRoute();
       return;
     }
-
+    console.log('Authenticated user found:', user);
+    this.spinner.show();
     try {
-      this.spinner.show();
-      const userData = await new Promise<any>(async (resolve, reject) => {
-        const emailHash = await this.emailToSafeKey(user.email);
-        this.apiService.getUserData(emailHash).subscribe({
-          next: (data) => resolve(data),
-          error: (err) => reject(err)
+      const userData = await this.fetchUserData(user.email);
+      console.log('User Exists in S3:', userData);
+      this.userExists(userData);
+    } catch (err: any) {
+      console.log('User doesnt exist in s3');
+      const localData = JSON.parse(localStorage.getItem('stripeFlow') || '{}');
+      if (localData?.selectedPlan && localData?.googleFlow) {
+        console.log('Google signup flow detected, redirecting to checkout');
+        this.startCheckout({
+          priceId: localData.selectedPlan,
+          userData: user
         });
-      });
-
-      console.log('User data retrieved:', userData);
-      this.authState.setUserData(userData);
-
-      // Check subscription status
-      if (userData.subscription === 'Active') {
-        // Redirect to homePage from user data
-        const homePage = userData.homePage || '/dashboard';
-        this.spinner.hide();
-        this.router.navigate([homePage]);
-      } else {
-        // Has user data but inactive subscription - show pricing only
-        this.showSignupFields = false;
-        this.apiCallPending = false;
-        this.spinner.hide();
+        return;
       }
-    } catch (error: any) {
-      this.apiCallPending = false;
+      console.log('New user flow, showing signup fields');
+      this.newUser(err, user);
+    } finally {
+      this.cdRef.detectChanges();
       this.spinner.hide();
-      // If 500 error, it's a new user - show signup fields
-      if (error?.status === 500) {
-        console.log('New user detected, showing signup fields');
-        this.showSignupFields = true;
-        // Pre-populate email and name from auth state
-        this.userData.email = user.email || '';
-        if (user.username) {
-          const nameParts = user.username.split(/[\s._-]+/);
-          if (nameParts.length >= 2) {
-            this.userData.firstName = nameParts[0];
-            this.userData.lastName = nameParts.slice(1).join(' ');
-          }
+    }
+  }
+
+  async checkIfLoggedIn() {
+    try {
+      const session = await fetchAuthSession();
+      if (session?.tokens?.idToken) {
+        console.log('User is authenticated');
+        const user = await getCurrentUser();
+        if (user) {
+          const idToken = session.tokens?.idToken?.payload;
+          const givenName = idToken?.['given_name'] as string || '';
+          sessionStorage.setItem('userName', givenName);
+          const email = idToken?.['email'];
+          this.authState.setUser({ ...user, email });
         }
-      } else {
-        console.error('Error fetching user data:', error);
-        // On other errors, show pricing without signup fields
-        this.showSignupFields = false;
+      }
+    } catch {}
+    return this.authState.getUser();
+  }
+
+  private enterSignupFlowFromRoute(): void {
+    this.selectedPlan = this.route.snapshot.paramMap.get('plan') || 'professional_dashboard';
+    this.apiCallPending = false;
+    this.showSignupFields = true;
+    this.cdRef.detectChanges();
+  }
+
+  private async fetchUserData(email?: string): Promise<any> {
+    const emailHash = await this.emailToSafeKey(email || '');
+    return firstValueFrom(this.apiService.getUserData(emailHash));
+  }
+
+  private userExists(userData: any): void {
+    this.authState.setUserData(userData);
+    // Check subscription status
+    if (userData.subscription === 'Active') {
+      // Redirect to homePage from user data
+      const homePage = userData.homePage || '/dashboard';
+      this.spinner.hide();
+      this.router.navigate([homePage]);
+    }
+    if(userData.subscription === 'payment_succeeded_pending_activation') {
+      this.spinner.hide();
+      this.router.navigate(['/payment-success']);
+    }
+    this.showSignupFields = false;
+    this.apiCallPending = false;
+    this.spinner.hide();
+    this.cdRef.detectChanges();
+  }
+
+  private newUser(error: any, user: any): void {
+    // If 500 error, it's a new user - show signup fields
+    if (error?.status === 500) {
+      console.log('New user detected, showing signup fields');
+      this.showSignupFields = true;
+      // Pre-populate email and name from auth state
+      this.userData.email = user.email || '';
+      if (user.username) {
+        const nameParts = user.username.split(/[\s._-]+/);
+        if (nameParts.length >= 2) {
+          this.userData.firstName = nameParts[0];
+          this.userData.lastName = nameParts.slice(1).join(' ');
+        }
       }
     }
+    this.apiCallPending = false;
+    this.spinner.hide();
+    this.cdRef.detectChanges();
   }
 
   validateSignupFields(): boolean {
@@ -114,12 +164,57 @@ export class CheckinComponent implements OnInit {
     return true;
   }
 
-   async emailToSafeKey(email: string): Promise<string> {
+  async emailToSafeKey(email: string): Promise<string> {
     const canonical = email.trim().toLowerCase();
     const data = new TextEncoder().encode(canonical);
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     return Array.from(new Uint8Array(hashBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
+  }
+
+
+  /**
+    * Redirect user to Stripe checkout page after validating signup fields
+    * @param emitJSON JSON object containing priceId and userData
+  */
+  async startCheckout(emitJSON: any): Promise<void> {
+    this.saveUserData(emitJSON.userData);
+    try {
+      const response = await new Promise<CheckoutSessionResponse>((resolve, reject) => {
+        this.stripeCheckoutService.createCheckoutSession(emitJSON.priceId, emitJSON.userData.userId, emitJSON.userData.email).subscribe({
+          next: (result) => resolve(result),
+          error: (err) => reject(err)
+        });
+      });
+
+      if (response?.url) {
+        window.location.href = response.url;
+      } else {
+        throw new Error('No checkout URL received from server');
+      }
+    } catch (error) {
+      console.error('Error redirecting to checkout:', error);
+      throw error;
+    }
+  }
+
+  async saveUserData(newUserData: any): Promise<boolean> {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.apiService.saveUserData(newUserData).subscribe({
+          next: () => {
+            this.authState.setUserData(newUserData);
+            resolve();
+          },
+          error: (err) => reject(err)
+        });
+      });
+      return true;
+    } catch (err: any) {
+      console.error('Error saving user data:', err);
+      this.error = 'Failed to save profile. Please try again.';
+      return false;
+    }
   }
 }

@@ -14,6 +14,7 @@ import { signOut, fetchAuthSession } from '@aws-amplify/auth';
 })
 export class NavbarComponent implements OnInit {
   @Input() hideMenu = false;
+  @Input() minimalMode = false; // For pricing page - only show theme toggle and user menu
   
   isDarkTheme = signal(false);
   mobileMenuOpen = signal(false);
@@ -21,10 +22,12 @@ export class NavbarComponent implements OnInit {
   userName = signal('');
   
   menuItems = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-    { label: 'API', icon: 'api', route: '/api' },
-    { label: 'Usage', icon: 'bar_chart', route: '/usage' },
-    { label: 'Settings', icon: 'settings', route: '/settings' }
+    { label: 'Upload & Convert', icon: 'dashboard', route: '/dashboard/conversion' },
+    { label: 'Fetch Rates', icon: 'api', route: '/dashboard/rates' },
+    { label: 'Statistics', icon: 'analytics', route: '/dashboard/statistics' },
+    { label: 'Charts', icon: 'category', route: '/dashboard/charts' },
+    { label: 'Scheduling', icon: 'schedule', route: '/dashboard/schedule' },
+    { label: 'Usage', icon: 'bar_chart', route: '/dashboard/usage' }
   ];
 
   constructor(private router: Router) {}
@@ -85,7 +88,6 @@ export class NavbarComponent implements OnInit {
     try {
       await signOut();
       sessionStorage.clear();
-      this.router.navigate(['/login']);
     } catch (error) {
       console.error('Error signing out:', error);
     }

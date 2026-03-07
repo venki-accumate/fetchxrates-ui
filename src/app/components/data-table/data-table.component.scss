@@ -1,0 +1,227 @@
+:host {
+  display: block;
+}
+
+// ─── Wrapper ────────────────────────────────────────────────────────────────
+.entity-wrapper {
+  padding: 0.4rem;
+  padding-top: 1rem;
+}
+
+// ─── Search row ─────────────────────────────────────────────────────────────
+.searchRow {
+  display: flex;
+  align-items: center;
+  height: 2.6rem;
+  width: 18rem;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.9rem;
+}
+
+.mat-icon-search {
+  color: var(--accent);
+  height: 40px;
+  overflow: hidden;
+  padding-right: 8px;
+  padding-top: 8px;
+  font-size: 24px !important;
+  flex-shrink: 0;
+}
+
+.filterInput {
+  outline: none;
+  display: block;
+  background: none;
+  border: none;
+  width: 100%;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+// ─── Table container ─────────────────────────────────────────────────────────
+.table-container {
+  margin-top: 1rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  .entity-table {
+    width: 100%;
+    min-width: 600px;
+    background: var(--bg-card);
+  }
+}
+
+// ─── Header & cell overrides (scoped to :host) ───────────────────────────────
+:host ::ng-deep .entity-table {
+  .mat-mdc-header-row {
+    background: var(--bg-secondary);
+  }
+
+  .mat-mdc-header-cell {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 2px solid var(--accent) !important;
+  }
+
+  .mat-mdc-row {
+    background: var(--bg-card);
+
+    &:nth-child(even) {
+      background: var(--bg-secondary);
+    }
+
+    &:hover {
+      background: var(--accent-hover-light) !important;
+    }
+  }
+
+  .mat-mdc-cell {
+    color: var(--text-primary);
+    border-bottom-color: var(--border) !important;
+    font-size: 0.875rem;
+  }
+}
+
+// ─── Sort ────────────────────────────────────────────────────────────────────
+:host ::ng-deep .mat-sort-header-button {
+  border: none;
+  background: none;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+:host ::ng-deep .mat-sort-header-arrow {
+  display: none !important;
+}
+
+.sortIcon {
+  color: var(--text-secondary) !important;
+  font-size: 1.4rem !important;
+  vertical-align: middle;
+}
+
+// ─── Paginator ───────────────────────────────────────────────────────────────
+:host ::ng-deep .mat-mdc-paginator {
+  background: transparent !important;
+
+  .mat-mdc-paginator-container {
+    padding: 0;
+    min-height: 52px;
+  }
+
+  .mat-mdc-paginator-page-size-label,
+  .mat-mdc-paginator-range-label {
+    color: var(--text-secondary) !important;
+  }
+
+  .mat-mdc-icon-button {
+    color: var(--text-primary) !important;
+  }
+
+  .mat-mdc-select-value {
+    color: var(--text-primary) !important;
+  }
+}
+
+// ─── Editable cells ───────────────────────────────────────────────────────────
+.cell-content {
+  display: block;
+  width: 100%;
+  padding: 0.25rem;
+
+  &.editable-cell {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: rgba(var(--accent-rgb), 0.1);
+    }
+  }
+}
+
+.edit-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 200px !important;
+
+  .edit-input {
+    flex: 1;
+    padding: 0.375rem 0.5rem;
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    outline: none;
+    max-width: 120px !important;
+    background: var(--bg-card);
+    color: var(--text-primary);
+
+    &:focus {
+      border-color: var(--accent-hover);
+      box-shadow: 0 0 0 0.2rem rgba(var(--accent-rgb), 0.25);
+    }
+
+    &.error-input {
+      border-color: var(--danger);
+      background-color: rgba(239, 68, 68, 0.08);
+
+      &:focus {
+        border-color: var(--danger);
+        box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25);
+      }
+    }
+  }
+
+  .icon-button,
+  .icon-cancel {
+    padding: 0;
+    min-width: 32px;
+    height: 32px;
+
+    .mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .icon-button .mat-icon {
+    color: var(--success) !important;
+  }
+
+  .icon-cancel .mat-icon {
+    color: var(--danger) !important;
+  }
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  color: var(--text-muted);
+
+  mat-icon {
+    font-size: 2.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+}

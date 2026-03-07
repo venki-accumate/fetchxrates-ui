@@ -1,0 +1,13 @@
+<br/>
+<br/>
+<div class="button-bar" *ngIf="config">
+    <button type="button" class="btn left-button" *ngIf="config?.left" [disabled]="config?.left?.disabled"
+        (click)="onClick('left')">
+        &larr; {{ config?.left?.label }}
+    </button>
+
+    <button type="button" class="btn right-button" *ngIf="config?.right" [disabled]="config?.right?.disabled"
+        (click)="onClick('right')">
+        {{ config?.right?.label }} &rarr;
+    </button>
+</div>

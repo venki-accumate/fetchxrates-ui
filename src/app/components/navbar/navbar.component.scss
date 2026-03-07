@@ -5,10 +5,30 @@
   background-color: var(--bg-navbar);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(10px);
+
+  // Minimal mode for pricing page - no background, border, or positioning
+  &.minimal-mode {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+    background: transparent;
+    border: none;
+    backdrop-filter: none;
+
+    .container {
+      padding: 1rem 2rem;
+      margin: 0;
+    }
+
+    .navbar-content {
+      height: auto;
+      justify-content: flex-end;
+    }
+  }
 }
 
 .container {
-  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
 }
@@ -28,41 +48,6 @@
   flex: 1;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.125rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-navbar);
-  text-decoration: none;
-  
-  &:hover {
-    opacity: 0.9;
-  }
-}
-
-.logo-part {
-  font-family: 'Courier New', 'Courier', monospace;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.logo-fetch {
-  color: var(--text-navbar);
-}
-
-.logo-rates {
-  color: var(--text-navbar);
-}
-
-.logo-image {
-  height: 30px;
-  width: auto;
-  margin: -2px -2px;
-  display: block;
-}
-
 .nav-links {
   display: flex;
   align-items: center;
@@ -72,7 +57,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-primary);
     font-weight: 500;
     font-size: 0.9375rem;
     transition: color 0.2s ease;

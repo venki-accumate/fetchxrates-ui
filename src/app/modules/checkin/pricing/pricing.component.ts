@@ -7,10 +7,11 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { StripeCheckoutService, CheckoutSessionResponse } from '../../../services/stripe-checkout.service';
 import { AuthStateService } from '../../../services/auth-state.service';
 import { FetchXRApiService } from '../../../services/fetchXR-api.service';
 import { FeaturesDialogComponent } from './features-dialog.component';
+import { NavbarComponent } from '../../../components/navbar/navbar.component';
+import { signInWithRedirect } from '@aws-amplify/auth/cognito';
 
 @Component({
   selector: 'app-pricing',
@@ -21,7 +22,8 @@ import { FeaturesDialogComponent } from './features-dialog.component';
     MatTabsModule,
     MatDialogModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    NavbarComponent
   ],
   templateUrl: './pricing.component.html',
   styleUrls: ['./pricing.component.scss']
@@ -30,11 +32,12 @@ export class PricingComponent implements OnInit {
   @Input() showSignupFields: boolean = false;
   @Input() userData: any = {};
   @Input() termsAccepted = false;
+  @Input() selectedPlan: string = 'professional_dashboard';
   @Input() error = '';
   @Output() userDataChange = new EventEmitter<any>();
   @Output() termsAcceptedChange = new EventEmitter<boolean>();
-  
-  selectedPlan: string = 'professional';
+  @Output() startStripeCheckout = new EventEmitter<string>();
+
   pricingTiers: any[] = [];
   loading: boolean = true;
   billingCycle: 'monthly' | 'yearly' = 'monthly';
@@ -43,6 +46,7 @@ export class PricingComponent implements OnInit {
   monthlyPrices: number[] = [];
   yearlyPrices: number[] = [];
   allTiers: any = {};
+  userLoggedIn: boolean = false;
 
   faqs = [
     {
@@ -78,13 +82,11 @@ export class PricingComponent implements OnInit {
   ];
 
   constructor(
-    private router: Router, 
-    private http: HttpClient, 
-    private stripeCheckoutService: StripeCheckoutService,
+    private http: HttpClient,
     private authState: AuthStateService,
-    private apiService: FetchXRApiService,
-    private dialog: MatDialog
-  ) {}
+    private dialog: MatDialog,
+    private cdRef: ChangeDetectorRef
+  ) { }
 
   openFeaturesDialog(tier: any): void {
     this.dialog.open(FeaturesDialogComponent, {
@@ -96,6 +98,7 @@ export class PricingComponent implements OnInit {
   ngOnInit(): void {
     console.log('PricingComponent ngOnInit called');
     this.loading = true;
+    
     this.http.get<any>('assets/pricing-tiers.json').subscribe({
       next: (data) => {
         console.log('Pricing data loaded:', data);
@@ -114,6 +117,12 @@ export class PricingComponent implements OnInit {
         this.loading = false;
       }
     });
+    const user = this.authState.getUser();
+    if (user) {
+      this.userData.email = user.email;
+      this.userLoggedIn = true;
+      this.cdRef.detectChanges();
+    }
   }
 
   selectPlan(planId: string): void {
@@ -124,52 +133,6 @@ export class PricingComponent implements OnInit {
     this.billingCycle = cycle;
   }
 
-  /**
-     * Redirect user to Stripe checkout page after validating signup fields
-     * @param priceId Stripe Price ID for the subscription plan
-     */
-    async startCheckout(priceId: string): Promise<void> {
-      // Validate signup fields if shown
-      if (this.showSignupFields) {
-        if (!this.validateSignupFields()) {
-          return; // Validation failed, error message set
-        }
-        
-        // Save user data before proceeding to checkout
-        const saved = await this.saveUserData();
-        if (!saved) {
-          return; // Save failed, error message set
-        }
-      }
-      
-      priceId = this.billingCycle === 'monthly' ? `${priceId}_monthly` : `${priceId}_yearly`;
-      const userJson = this.authState.getUser();
-      console.log('User from auth state:', userJson);
-      
-      if (!userJson) {
-        console.error('User not authenticated');
-        this.router.navigate(['/login']);
-        return;
-      }
-      
-      try {
-        const response = await new Promise<CheckoutSessionResponse>((resolve, reject) => {
-          this.stripeCheckoutService.createCheckoutSession(priceId, userJson.userId, userJson.email).subscribe({
-            next: (result) => resolve(result),
-            error: (err) => reject(err)
-          });
-        });
-        
-        if (response?.url) {
-          window.location.href = response.url;
-        } else {
-          throw new Error('No checkout URL received from server');
-        }
-      } catch (error) {
-        console.error('Error redirecting to checkout:', error);
-        throw error;
-      }
-    }
 
   switchTierType(type: 'dashboard' | 'restapi'): void {
     this.tierType = type;
@@ -183,8 +146,8 @@ export class PricingComponent implements OnInit {
   }
 
   getPrice(index: number): number {
-    return this.billingCycle === 'monthly' 
-      ? this.monthlyPrices[index] 
+    return this.billingCycle === 'monthly'
+      ? this.monthlyPrices[index]
       : this.yearlyPrices[index];
   }
 
@@ -230,51 +193,52 @@ export class PricingComponent implements OnInit {
     return true;
   }
 
-  async saveUserData(): Promise<boolean> {
-    if (!this.showSignupFields) {
-      return true; // Nothing to save
+  async startCheckout(priceId: string) {
+    let emitJSON: any = {};
+    if (this.showSignupFields) {
+      if (!this.validateSignupFields()) {
+        return;
+      }
     }
+    priceId = this.billingCycle === 'monthly' ? `${priceId}_monthly` : `${priceId}_yearly`;
+    const user = this.authState.getUser();
+    const email = user?.email || this.userData.email;
 
-    try {
-      const user = this.authState.getUser();
-      const email = user?.email || this.userData.email;
-
-      const newUserData = {
-        email: email,
-        emailHash: await this.emailToSafeKey(email),
-        firstName: this.userData.firstName,
-        lastName: this.userData.lastName,
-        company: this.userData.company || '',
-        password: this.userData.password,
-        subscription: 'Inactive',
-        homePage: '/dashboard',
-        createdAt: new Date().toISOString()
-      };
-
-      await new Promise<void>((resolve, reject) => {
-        this.apiService.saveUserData(newUserData).subscribe({
-          next: () => {
-            this.authState.setUserData(newUserData);
-            resolve();
-          },
-          error: (err) => reject(err)
-        });
-      });
-
-      return true;
-    } catch (err: any) {
-      console.error('Error saving user data:', err);
-      this.error = 'Failed to save profile. Please try again.';
-      return false;
-    }
+    const newUserData = {
+      email: email,
+      emailHash: await this.emailToSafeKey(email),
+      firstName: this.userData.firstName,
+      lastName: this.userData.lastName,
+      company: this.userData.company || '',
+      subscription: 'Inactive',
+      homePage: '/dashboard',
+      createdAt: new Date().toISOString()
+    };
+    emitJSON.priceId = priceId;
+    emitJSON.userData = newUserData;
+    console.log('Emitting checkout event with data:', emitJSON);
+    this.startStripeCheckout.emit(JSON.stringify(emitJSON));
   }
 
- async emailToSafeKey(email: string): Promise<string> {
-  const canonical = email.trim().toLowerCase();
-  const data = new TextEncoder().encode(canonical);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
- }
+  async emailToSafeKey(email: string): Promise<string> {
+    const canonical = email.trim().toLowerCase();
+    const data = new TextEncoder().encode(canonical);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async signInWith(provider: string) {
+    const data = {
+      selectedPlan: `${this.selectedPlan}_${this.billingCycle}`,
+      googleFlow: true
+    };
+    localStorage.setItem('stripeFlow', JSON.stringify(data));
+    try {
+      await signInWithRedirect({ provider: provider as any });
+    } catch (err) {
+      console.error(`${provider} sign-in failed!`, err);
+    }
+  }
 }

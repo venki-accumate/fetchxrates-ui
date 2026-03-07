@@ -11,7 +11,7 @@
 
 // LEFT PANEL - Pricing Plans
 .left-panel {
-  background: linear-gradient(135deg, #1e3a5f 0%, #4abbda 100%);
+  background: linear-gradient(135deg, #0e065e 20%, #10ab1a 100%);
   color: #fff;
   padding: 2rem 1.5rem;
   overflow-y: auto;
@@ -52,7 +52,7 @@
       display: flex;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 50px;
+      border-radius: 10px;
       padding: 6px;
       margin: 0 auto;
       width: fit-content;
@@ -61,7 +61,7 @@
       .toggle-btn {
         padding: 0.75rem 2rem;
         border: none;
-        border-radius: 50px;
+        border-radius: 10px;
         background: transparent;
         color: rgba(255, 255, 255, 0.7);
         font-size: 0.95rem;
@@ -168,7 +168,7 @@
 
       &.popular {
         border-color: #3b82f6;
-        
+
         .plan-badge {
           position: absolute;
           top: -12px;
@@ -214,6 +214,9 @@
           .plan-label {
             cursor: pointer;
             flex: 1;
+            display: flex;
+            gap: 10rem;
+            align-items: center;
 
             h3 {
               font-size: 1.5rem;
@@ -291,15 +294,18 @@
   background: var(--bg-primary);
   padding: 3rem 2.5rem;
   display: flex;
-  align-items: center;
   justify-content: center;
+  position: relative; // For absolute positioned navbar
 
   @media (max-width: 1024px) {
     padding: 2rem 1.5rem;
   }
 
+  .logged-in {
+    padding-top: 2rem;
+  }
+
   .signup-container {
-    max-width: 480px;
     width: 100%;
 
     .signup-header {
@@ -307,7 +313,7 @@
       margin-bottom: 2rem;
 
       h2 {
-        font-size: 2rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 0.5rem;
@@ -496,4 +502,16 @@
       font-style: italic;
     }
   }
+}
+
+.celebrate {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 18px;
+  color: #f4b400;
+}
+
+.logo {
+  justify-content: center;
 }

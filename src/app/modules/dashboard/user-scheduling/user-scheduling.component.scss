@@ -1,0 +1,422 @@
+.row {
+  width: 90%;
+  margin: 3rem;
+}
+
+// ─── Panel theming ────────────────────────────────────────────────────────────
+::ng-deep .schedules-panel,
+::ng-deep .form-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px var(--shadow) !important;
+
+  .mat-expansion-panel-header {
+    background: var(--bg-card) !important;
+    border-radius: 12px !important;
+
+    &:hover {
+      background: var(--bg-secondary) !important;
+    }
+  }
+
+  .mat-expansion-panel-header-title {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mat-expansion-panel-header-description {
+    color: var(--text-secondary) !important;
+    font-size: 0.85rem;
+  }
+
+  .mat-expansion-indicator::after {
+    color: var(--accent) !important;
+  }
+
+  .mat-expansion-panel-body {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+}
+
+::ng-deep .form-panel {
+  margin-top: 2rem !important;
+}
+
+.panel-icon {
+  color: var(--accent);
+  font-size: 1.2rem !important;
+  width: 1.2rem !important;
+  height: 1.2rem !important;
+}
+
+// ─── Unsaved-changes badge ────────────────────────────────────────────────────
+.unsaved-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warning, #f59e0b);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  letter-spacing: 0.03em;
+
+  mat-icon {
+    font-size: 0.85rem !important;
+    width: 0.85rem !important;
+    height: 0.85rem !important;
+    color: var(--warning, #f59e0b) !important;
+  }
+}
+
+// ─── Schedules table ──────────────────────────────────────────────────────────
+.table-container {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.schedule-table {
+  width: 100%;
+  min-width: 780px;
+  background: var(--bg-card);
+}
+
+:host ::ng-deep .schedule-table {
+  .mat-mdc-header-row {
+    background: var(--bg-secondary);
+  }
+
+  .mat-mdc-header-cell {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-bottom: 2px solid var(--accent) !important;
+    padding: 0 12px;
+  }
+
+  .mat-mdc-row {
+    background: var(--bg-card);
+
+    &:nth-child(even) {
+      background: var(--bg-secondary);
+    }
+
+    &:hover {
+      background: var(--accent-hover-light) !important;
+    }
+
+    &.editing-row {
+      background: rgba(var(--accent-rgb), 0.08) !important;
+      border-left: 3px solid var(--accent);
+    }
+  }
+
+  .mat-mdc-cell {
+    color: var(--text-primary);
+    border-bottom-color: var(--border) !important;
+    font-size: 0.875rem;
+    padding: 0 12px;
+  }
+}
+
+.actions-header,
+.actions-cell {
+  width: 100px;
+  min-width: 90px;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.recipients-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ─── Action icon buttons ──────────────────────────────────────────────────────
+.action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+
+  ::ng-deep .mat-mdc-button-persistent-ripple { display: none; }
+  ::ng-deep .mat-mdc-button-ripple            { display: none; }
+
+  mat-icon {
+    font-size: 1.1rem !important;
+    width: 1.1rem !important;
+    height: 1.1rem !important;
+    transition: color 0.15s;
+  }
+
+  &:hover {
+    border-radius: 50%;
+  }
+}
+
+.edit-btn {
+  mat-icon { color: var(--accent) !important; }
+
+  &:hover { background: rgba(var(--accent-rgb), 0.1) !important; }
+
+  &.is-editing {
+    mat-icon { color: var(--accent-hover) !important; }
+    background: rgba(var(--accent-rgb), 0.1) !important;
+    border-radius: 50%;
+  }
+}
+
+.delete-btn {
+  mat-icon { color: var(--danger, #ef4444) !important; }
+
+  &:hover { background: rgba(239, 68, 68, 0.1) !important; }
+}
+
+// ─── No-data message ──────────────────────────────────────────────────────────
+.no-data-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+
+  mat-icon {
+    color: var(--accent) !important;
+    font-size: 1.1rem !important;
+    width: 1.1rem !important;
+    height: 1.1rem !important;
+  }
+}
+
+// ─── Filter form ──────────────────────────────────────────────────────────────
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3rem;
+  align-items: flex-start;
+  padding: 0.5rem 0 0.75rem;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hint-text {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+// ─── Native selects ───────────────────────────────────────────────────────────
+.map-select {
+  appearance: none;
+  background-color: var(--bg-secondary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2322b71b'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 1.75rem 0.35rem 0.7rem;
+  font-size: 0.875rem;
+  height: 38px;
+  min-width: 150px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+}
+
+// ─── Dual listbox ─────────────────────────────────────────────────────────────
+.dual-listbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.listbox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.listbox-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.listbox-select {
+  appearance: none;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  width: 130px;
+  height: 160px;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+
+  option:checked {
+    background-color: rgba(var(--accent-rgb), 0.15);
+    color: var(--text-primary);
+  }
+}
+
+.listbox-arrows {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+  padding-top: 3rem;
+}
+
+.arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: background 0.15s, border-color 0.15s;
+
+  mat-icon {
+    font-size: 1.1rem !important;
+    width: 1.1rem !important;
+    height: 1.1rem !important;
+    color: var(--accent) !important;
+  }
+
+  &:hover {
+    background: rgba(var(--accent-rgb), 0.1);
+    border-color: var(--accent);
+  }
+}
+
+// ─── Statistics toggle ────────────────────────────────────────────────────────
+.toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 38px;
+}
+
+.toggle-label {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  min-width: 28px;
+}
+
+:host ::ng-deep .stats-toggle {
+  .mdc-switch__track {
+    background-color: var(--border) !important;
+  }
+
+  &.mdc-switch--selected .mdc-switch__track {
+    background-color: rgba(var(--accent-rgb), 0.5) !important;
+  }
+
+  &.mdc-switch--selected .mdc-switch__handle::after {
+    background-color: var(--accent) !important;
+  }
+}
+
+// ─── Email recipients input ───────────────────────────────────────────────────
+.recipients-section {
+  min-width: 340px;
+  max-width: 420px;
+}
+
+.recipients-input {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.875rem;
+  height: 38px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+}
+
+.recipients-note {
+  margin-top: -0.1rem;
+}
+
+// ─── Error banner ─────────────────────────────────────────────────────────────
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  margin-top: 1rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--danger, #ef4444);
+  font-size: 0.875rem;
+
+  mat-icon {
+    font-size: 1.1rem !important;
+    width: 1.1rem !important;
+    height: 1.1rem !important;
+    color: var(--danger, #ef4444) !important;
+    flex-shrink: 0;
+  }
+}

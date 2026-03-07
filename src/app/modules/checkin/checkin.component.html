@@ -12,8 +12,10 @@
   <app-pricing 
     [showSignupFields]="showSignupFields"
     [userData]="userData"
+    [selectedPlan]="selectedPlan"
     [termsAccepted]="termsAccepted"
     [error]="error"
     (userDataChange)="userData = $event"
-    (termsAcceptedChange)="termsAccepted = $event"></app-pricing>
+    (termsAcceptedChange)="termsAccepted = $event" 
+    (startStripeCheckout)="startCheckout($event)"></app-pricing>
 </div>

@@ -1,0 +1,269 @@
+<div class="row">
+    <div class="mt-4 py-2 mb-4 col-12" style="margin-top: 1px !important" *ngIf="convertedData.length === 0">
+        <div id="attachmentsDropZone" class="row">
+            <a (click)="fileUpload.click()">
+                <div class="dragDropDiv textCenter col-md-12">
+                    <span>
+                        <mat-icon class="browseIcon">attach_file</mat-icon>
+                        Drop files or click to browse :
+                        Upload data,
+                        Fill the form,
+                        Convert currencies by date and download converted files.
+                    </span>
+                    <input type="file" class="file-input" (change)="onFileChange($event)" 
+                        accept=".xlsx,.xls,.csv"
+                        #fileUpload (click)="fileUpload.value=''">                        
+                </div>
+            </a>
+        </div>
+        <div *ngIf="uploadError" class="alert alert-danger col-md-4 mx-auto my-2 row">
+            Please upload only xlsx, xls, or csv files.
+        </div>
+    </div>
+
+    <!-- Display identified fields for user confirmation -->
+    <div class="col-12" *ngIf="convertedData.length > 0">
+        <mat-accordion>
+            <mat-expansion-panel [expanded]="true" class="confirmation-panel">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <mat-icon class="panel-icon">checklist</mat-icon>
+                        Confirm Identified Fields
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        Review detected headers, amount fields, and date fields before conversion
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div *ngFor="let sheet of convertedData; let sheetIdx = index" class="sheet-section mb-4">
+                    <h5 class="sheet-title">Sheet: {{ sheet.sheetName }}</h5>
+
+                    <!-- Header Row + Confirmation buttons -->
+                    <div class="field-group">
+                        <strong>Header Row:</strong> Row {{ sheet.headerRowIndex + 1 }}
+                        <span *ngIf="sheet.metadata.length > 0" class="text-muted">
+                            ({{ sheet.metadata.length }} row(s) of metadata detected above header)
+                        </span>
+                        
+                    <!-- Headers chips — always visible -->
+                    <div class="field-group">
+                        <div class="header-chips">
+                            <span *ngFor="let header of sheet.headers" class="chip">{{ header }}</span>
+                        </div>
+                    </div>
+
+                        <!-- Pending: show confirm/reject buttons -->
+                        <div *ngIf="headerConfirmations[sheet.sheetName] == null" class="header-confirm-row">
+                            <span class="confirm-label">Is this the correct header row?</span>
+                            <button class="confirm-btn btn-correct" (click)="confirmHeaderRow(sheet.sheetName)">
+                                <mat-icon>check_circle</mat-icon> Correct
+                            </button>
+                            <button class="confirm-btn btn-incorrect" (click)="rejectHeaderRow(sheet.sheetName, sheet)">
+                                <mat-icon>cancel</mat-icon> Incorrect
+                            </button>
+                        </div>
+
+                        <!-- Confirmed ✓ -->
+                        <div *ngIf="headerConfirmations[sheet.sheetName] === true" class="header-confirmed">
+                            <mat-icon class="icon-correct">check_circle</mat-icon>
+                            <span>Header row confirmed</span>
+                            <button class="link-btn" (click)="headerConfirmations[sheet.sheetName] = null">Change</button>
+                        </div>
+                    </div>
+
+                    <!-- Header selector — shown when Incorrect is selected -->
+                    <div *ngIf="headerConfirmations[sheet.sheetName] === false" class="field-group header-selector">
+                        <strong>Select the correct header row:</strong>
+                        <div class="candidate-rows">
+                            <label *ngFor="let row of getCandidateRows(sheet); let i = index"
+                                   class="candidate-row-label"
+                                   [class.selected]="pendingHeaderIndex[sheet.sheetName] === i">
+                                <input type="radio" [name]="'hdr_' + sheet.sheetName" [value]="i"
+                                       [(ngModel)]="pendingHeaderIndex[sheet.sheetName]">
+                                <span class="row-num">Row {{ i + 1 }}</span>
+                                <span class="row-preview">{{ row.slice(0, 6).join(' · ') }}</span>
+                            </label>
+                        </div>
+                        <button class="apply-btn" (click)="applyHeaderChange(sheetIdx)">
+                            <mat-icon>refresh</mat-icon> Apply &amp; Reload
+                        </button>
+                    </div>
+
+                    <!-- Column Mapping Table — visible only after header confirmed -->
+                    <ng-container *ngIf="headerConfirmations[sheet.sheetName] === true">
+
+                        <!-- Banner: date value column detected — rates will come from it -->
+                        <ng-container *ngIf="getDateValueColumn(sheet) as dateCol">
+                            <div class="date-column-notice">
+                                <mat-icon>info</mat-icon>
+                                We will use <strong>{{ dateCol }}</strong> column to apply exchange rates for converting the currency values.
+                            </div>
+                        </ng-container>
+
+                        <div class="field-group mapping-group">
+                            <strong>Column Mapping</strong>
+                            <div class="mapping-table-wrap">
+                                <table class="mapping-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Column Name</th>
+                                            <th>Type</th>
+                                            <th>Input</th>
+                                            <th *ngIf="!getDateValueColumn(sheet)">Use Exchange Rate Of</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let m of getColumnMappings(sheet)"
+                                            [class.row-amount]="m.type === 'amount'"
+                                            [class.row-date]="m.type === 'date'">
+
+                                            <!-- Column Name -->
+                                            <td class="col-name">{{ m.columnName }}</td>
+
+                                            <!-- Type select -->
+                                            <td class="col-type">
+                                                <select class="map-select type-select"
+                                                        [(ngModel)]="m.type"
+                                                        (ngModelChange)="onMappingTypeChange(m)">
+                                                    <option value="none">No Action</option>
+                                                    <option value="amount">Amount</option>
+                                                    <option value="date">Date</option>
+                                                </select>
+                                            </td>
+
+                                            <!-- Input column -->
+                                            <td class="col-input">
+
+                                                <!-- No Action -->
+                                                <span *ngIf="m.type === 'none'" class="no-action-label">
+                                                    <mat-icon class="na-icon">remove_circle_outline</mat-icon>
+                                                    No action required
+                                                </span>
+
+                                                <!-- Amount: from → to currency -->
+                                                <div *ngIf="m.type === 'amount'" class="currency-input-row">
+                                                    <select class="map-select currency-select"
+                                                            [ngModel]="m.fromCurrency"
+                                                            (ngModelChange)="onCurrencyChange(sheet, m, 'from', $event)">
+                                                        <option value="" disabled>From</option>
+                                                        <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+                                                    </select>
+                                                    <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                                                    <select class="map-select currency-select"
+                                                            [ngModel]="m.toCurrency"
+                                                            (ngModelChange)="onCurrencyChange(sheet, m, 'to', $event)">
+                                                        <option value="" disabled>To</option>
+                                                        <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- Date: daily rate / monthly average -->
+                                                <select *ngIf="m.type === 'date'" class="map-select date-select"
+                                                        [(ngModel)]="m.dateRateType">
+                                                    <option value="daily">Daily Rate</option>
+                                                    <option value="monthly">Monthly Average</option>
+                                                </select>
+
+                                            </td>
+
+                                            <!-- Use Exchange Rate Of — only when no date value column exists in data -->
+                                            <td *ngIf="!getDateValueColumn(sheet)" class="col-exchange-rate">
+                                                <ng-container *ngIf="m.type === 'amount'">
+                                                    <div class="period-picker">
+                                                        <select class="map-select month-select"
+                                                                [ngModel]="getPeriodMonth(m)"
+                                                                (ngModelChange)="onPeriodChange(m, 'month', $event)">
+                                                            <option value="" disabled>Month</option>
+                                                            <option *ngFor="let mo of MONTHS; let i = index"
+                                                                    [value]="mo"
+                                                                    [disabled]="isMonthDisabled(i, getPeriodYear(m))">
+                                                                {{ mo }}
+                                                            </option>
+                                                        </select>
+                                                        <input type="number"
+                                                               class="period-year-input"
+                                                               [ngModel]="getPeriodYear(m)"
+                                                               (ngModelChange)="onPeriodChange(m, 'year', $event)"
+                                                               [min]="2000"
+                                                               [max]="TODAY.getFullYear()"
+                                                               placeholder="YYYY">
+                                                    </div>
+                                                </ng-container>
+                                                <span *ngIf="m.type !== 'amount'" class="cell-dash">—</span>
+                                            </td>
+
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Confirmation checkbox -->
+                            <label class="mapping-confirm-label">
+                                <input type="checkbox"
+                                       [(ngModel)]="mappingConfirmed[sheet.sheetName]"
+                                       class="mapping-confirm-checkbox">
+                                I confirm all mapping details are correct
+                            </label>
+                        </div>
+
+                    </ng-container>
+
+                </div>
+
+            </mat-expansion-panel>
+
+            <!-- Data Preview Panel -->
+            <mat-expansion-panel class="data-preview-panel">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <mat-icon class="panel-icon">table_chart</mat-icon>
+                        Data Preview
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        {{ convertedData[0]?.data?.length || 0 }} rows &mdash; filter, sort and paginate below
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div *ngFor="let sheet of convertedData" class="sheet-preview">
+                    <div *ngIf="convertedData.length > 1" class="sheet-preview-title">
+                        <mat-icon>grid_on</mat-icon>
+                        <span>{{ sheet.sheetName }}</span>
+                        <span class="row-count">{{ sheet.data.length }} rows</span>
+                    </div>
+                    <app-data-table
+                        [columnHeaders]="sheet.headers"
+                        [dataSource]="getSheetTableData(sheet)">
+                    </app-data-table>
+                </div>
+
+            </mat-expansion-panel>
+
+            <!-- Converted Data Panel — shown after conversion is complete -->
+            <mat-expansion-panel *ngIf="convertedSheets.length > 0" class="data-preview-panel" [expanded]="true">
+                <mat-expansion-panel-header>
+                    <mat-panel-title>
+                        <mat-icon class="panel-icon">currency_exchange</mat-icon>
+                        Converted Data (amounts in {{ convertedToCurrencies }})
+                    </mat-panel-title>
+                    <mat-panel-description>
+                        {{ convertedSheets[0]?.data?.length || 0 }} rows &mdash; exchange rates applied
+                    </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                <div *ngFor="let sheet of convertedSheets" class="sheet-preview">
+                    <div *ngIf="convertedSheets.length > 1" class="sheet-preview-title">
+                        <mat-icon>grid_on</mat-icon>
+                        <span>{{ sheet.sheetName }}</span>
+                        <span class="row-count">{{ sheet.data.length }} rows</span>
+                    </div>
+                    <app-data-table
+                        [columnHeaders]="sheet.headers"
+                        [dataSource]="getSheetTableData(sheet)">
+                    </app-data-table>
+                </div>
+
+            </mat-expansion-panel>
+        </mat-accordion>
+    </div>
+</div>
+<app-button-bar (action)="handleAction($event)" [config]="buttonConfig"></app-button-bar>

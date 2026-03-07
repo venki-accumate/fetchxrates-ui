@@ -16,6 +16,33 @@ export interface ExchangeRateResponse {
   message?: string;
 }
 
+export interface ExcelConversionRatesPayload {
+  dates: string[];
+  baseCurrency?: string;
+  currencyFrom: string;
+  currencyTo: string;
+}
+
+export interface RatesRangePayload {
+  startDate: string;
+  endDate: string;
+  baseCurrency?: string;
+  currencyFrom: string;
+  currencyTo?: string[];  // omit to get all available currencies
+}
+
+export interface UserSchedule {
+  id: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  fromCurrency: string;
+  toCurrencies: string[];         // empty = all available currencies
+  deliveryFormat: 'excel' | 'csv' | 'pdf' | 'email_table';
+  showStatistics: boolean;        // meaningful only for weekly / monthly
+  additionalRecipients: string[]; // max 3; logged-in user is always included
+  createdAt: string;
+  updatedAt: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -74,12 +101,59 @@ export class FetchXRApiService {
     return this.http.get<any>(`${this.apiUrl}/aws-s3/user-file`, { params });
   }
 
+  postPaymentSuccess(email: string, sessionId: string) {
+    return this.http.post(
+      `${this.apiUrl}/stripe-success/payment-success`,
+      { email, sessionId }
+    );
+}
+
   /**
    * Save user data to S3
    * @param userData User data object containing email, firstName, lastName, phone, etc.
    */
   saveUserData(userData: any): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/aws-s3/create-user-file`, { fileContent: userData});
+  }
+
+  /**
+   * POST /exchange-rate/excel-conversion-rates
+   * Fetches cross-rates for a list of dates and a currency pair.
+   * Returns a map of { "YYYY-MM-DD": rate } for each requested date.
+   */
+  getExcelConversionRates(payload: ExcelConversionRatesPayload): Observable<Record<string, number>> {
+    return this.http.post<Record<string, number>>(
+      `${this.apiUrl}/exchange-rate/excel-conversion-rates`,
+      payload
+    );
+  }
+
+  /**
+   * POST /exchange-rate/rates-range
+   * Fetches historical rates for a date range.
+   * Single pair → { date: rate }; all currencies (no currencyTo) → { date: { currency: rate } }
+   */
+  getRatesRange(payload: RatesRangePayload): Observable<Record<string, any>> {
+    return this.http.post<Record<string, any>>(
+      `${this.apiUrl}/exchange-rate/rates-range`,
+      payload
+    );
+  }
+
+  /**
+   * GET /schedules/:userId
+   * Returns the list of saved schedules for a user.
+   */
+  getSchedules(userId: string): Observable<UserSchedule[]> {
+    return this.http.get<UserSchedule[]>(`${this.apiUrl}/schedules/${userId}`);
+  }
+
+  /**
+   * POST /schedules/:userId
+   * Persists the full list of schedules for a user (replaces existing).
+   */
+  saveSchedules(userId: string, schedules: UserSchedule[]): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/schedules/${userId}`, { schedules });
   }
 
   /**

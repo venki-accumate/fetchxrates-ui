@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { SessionService } from './services/session.service';
 import { EventBusService } from './services/event-bus.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -25,7 +25,7 @@ export class AppComponent implements OnInit {
     private sessionService: SessionService,
     private eventBus: EventBusService,
     private snackBar: MatSnackBar,
-    private authState: AuthStateService
+    private activatedRoute: ActivatedRoute
   ) {
     // Subscribe to event bus for snackbar notifications
     this.eventBus.snackbar$.pipe(
@@ -38,24 +38,25 @@ export class AppComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    // Listen to route changes to determine layout visibility and start session timer
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe((event: any) => {
-      const url = event.url;
-      this.showLayout = !url.includes('/login') && !url.includes('/signup');
-      this.hideMenuItems = url.includes('/checkin');
-      this.showNavbar = url.includes('/checkin') && this.authState.getUser();
-      // Start session timer on every navigation
-      this.sessionService.startSessionTimer();
-    });
+ ngOnInit(): void {
+  const hideLayout$ = this.router.events.pipe(
+    filter(e => e instanceof NavigationEnd),
+    map(() => {
+      let r: ActivatedRoute | null = this.activatedRoute;
+      while (r?.firstChild) r = r.firstChild;
+      return !!r?.snapshot.data?.['hideLayout'];
+    }),
+    takeUntilDestroyed(this.destroyRef)
+  );
 
-    // Set initial state
-    const currentUrl = this.router.url;
-    this.showLayout = !currentUrl.includes('/login') && !currentUrl.includes('/signup');
-    this.hideMenuItems = currentUrl.includes('/checkin');
-    this.showNavbar = currentUrl.includes('/checkin') && this.authState.getUser();
-  }
+  hideLayout$.subscribe(hideLayout => {
+    this.showLayout = !hideLayout;
+    this.sessionService.startSessionTimer();
+  });
+
+  let r: ActivatedRoute | null = this.activatedRoute;
+  while (r?.firstChild) r = r.firstChild;
+  this.showLayout = !r?.snapshot.data?.['hideLayout'];
+}
+
 }

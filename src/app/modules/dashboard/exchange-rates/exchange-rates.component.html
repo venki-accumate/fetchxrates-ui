@@ -1,0 +1,189 @@
+<div class="row">
+  <div class="col-12">
+    <mat-accordion>
+      <mat-expansion-panel [expanded]="true" class="filters-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">tune</mat-icon>
+            Exchange Rate Lookup
+          </mat-panel-title>
+          <mat-panel-description>
+            Select currencies and a date range to fetch historical rates
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="filter-form">
+          <div class="filter-section">
+            <span class="filter-label">From Currency</span>
+            <select
+              class="map-select"
+              [(ngModel)]="fromCurrency"
+              (ngModelChange)="validationError.set('')">
+              <option value="" disabled>Select currency</option>
+              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <div class="filter-section">
+            <span class="filter-label">
+              To Currencies
+              <span class="hint-text">&nbsp;· leave empty for all</span>
+            </span>
+
+            <div class="dual-listbox">
+              <div class="listbox">
+                <label class="listbox-label">Available</label>
+                <select #availableSelect multiple class="listbox-select">
+                  <option *ngFor="let c of availableToCurrencies" [style.display]="c===fromCurrency ? 'none' : ''" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+
+              <div class="listbox-arrows">
+                <button type="button" class="arrow-btn" title="Add selected" (click)="moveRight()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <button type="button" class="arrow-btn" title="Remove selected" (click)="moveLeft()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+
+              <div class="listbox">
+                <label class="listbox-label">
+                  Selected
+                  <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
+                </label>
+                <select #selectedSelect multiple class="listbox-select">
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <span class="filter-label">
+              Date Range
+              <span class="hint-text">&nbsp;· no today or future dates · max 5 years</span>
+            </span>
+
+            <div class="date-range">
+              <input
+                type="date"
+                class="date-input"
+                [(ngModel)]="startDate"
+                [max]="maxDate"
+                (ngModelChange)="onStartDateChange()">
+
+              <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+
+              <input
+                type="date"
+                class="date-input"
+                [(ngModel)]="endDate"
+                [min]="startDate"
+                [max]="maxEndDate"
+                [disabled]="!startDate"
+                (ngModelChange)="validationError.set('')">
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="validationError()" class="error-banner">
+          <mat-icon>error_outline</mat-icon>
+          {{ validationError() }}
+        </div>
+      </mat-expansion-panel>
+
+      <ngx-spinner
+        bdColor="rgba(0, 0, 0, 0.8)"
+        size="medium"
+        color="#22b71b"
+        type="line-scale"
+        [fullScreen]="true">
+        <p style="color: white">Fetching exchange rates…</p>
+      </ngx-spinner>
+
+      <mat-expansion-panel
+        *ngIf="hasSearched()"
+        [expanded]="true"
+        class="results-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">show_chart</mat-icon>
+            {{ resultTitle }}
+          </mat-panel-title>
+          <mat-panel-description>{{ resultSummary }}</mat-panel-description>
+        </mat-expansion-panel-header>
+        
+
+        <div *ngIf="!isLoading && resultLength() === 0" class="no-data-msg">
+          <mat-icon>info_outline</mat-icon>
+          No rates found for the selected date range.
+        </div>
+
+        <div *ngIf="!isLoading && resultLength() > 0">
+          <div class="actionIcons">
+            <!-- Download menu -->
+            <button mat-icon-button [matMenuTriggerFor]="downloadMenu" matTooltip="Download" aria-label="Download">
+              <mat-icon>download</mat-icon>
+            </button>
+
+            <!-- Settings menu -->
+            <button mat-icon-button [matMenuTriggerFor]="settingsMenu" matTooltip="Settings" aria-label="Settings">
+              <mat-icon>settings</mat-icon>
+            </button>
+          </div>
+
+          <!-- Download options -->
+          <mat-menu #downloadMenu="matMenu" xPosition="before" panelClass="xr-action-menu">
+            <button mat-menu-item (click)="downloadExcel()">
+              <mat-icon>table_chart</mat-icon>
+              <span>Download Excel</span>
+            </button>
+            <button mat-menu-item (click)="downloadCsv()">
+              <mat-icon>description</mat-icon>
+              <span>Download CSV</span>
+            </button>
+            <button mat-menu-item (click)="downloadPdf()">
+              <mat-icon>picture_as_pdf</mat-icon>
+              <span>Download PDF</span>
+            </button>
+          </mat-menu>
+
+          <!-- Settings options -->
+          <mat-menu #settingsMenu="matMenu" xPosition="before" panelClass="xr-action-menu">
+            <button mat-menu-item (click)="togglePagination()">
+              <mat-icon>{{ isPaginationEnabled() ? 'last_page' : 'view_list' }}</mat-icon>
+              <span>{{ isPaginationEnabled() ? 'Remove Pagination' : 'Add Pagination' }}</span>
+            </button>
+            <div class="menu-date-format" (click)="$event.stopPropagation()">
+              <div class="menu-group-label">
+                <mat-icon>calendar_month</mat-icon>
+                <span>Date Format</span></div>
+              <select
+                class="date-format-select"
+                [ngModel]="dateFormat()"
+                (ngModelChange)="setDateFormat($event)">
+                <option *ngFor="let fmt of DATE_FORMATS" [value]="fmt.value">{{ fmt.label }}</option>
+              </select>
+            </div>
+          </mat-menu>
+          <app-data-table
+            [columnHeaders]="tableColumnHeaders()"
+            [dataSource]="tableData()"
+            [disablePagination]="!isPaginationEnabled()">
+          </app-data-table>
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+  </div>
+</div>
+
+<app-button-bar
+  (action)="handleAction($event)"
+  [config]="buttonConfig">
+</app-button-bar>
+
+<!-- Hidden report generators — triggered programmatically via @ViewChild -->
+<app-excel-report        #excelReport style="display:none"></app-excel-report>
+<app-csv-report          #csvReport   style="display:none"></app-csv-report>
+<app-generic-pdf-report  #pdfReport   style="display:none"></app-generic-pdf-report>

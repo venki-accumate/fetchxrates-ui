@@ -1,0 +1,488 @@
+.row {
+  width: 90%;
+  margin: 3rem;
+}
+
+select {
+    height: 33px;
+    margin-top: 10px;
+}
+
+.menu-group-label {
+    display: flex;
+    gap: 10px;
+    padding-left: 0.7rem;
+    padding-top: 0.5rem;
+}
+
+.menu-date-format select {
+    margin-left: 2.5rem;
+}
+
+.menu-date-format:hover {
+    background-color: var(--accent-hover-light) !important;
+    padding-bottom: 0.5rem;
+}
+
+// ─── Action icons (download + settings) ──────────────────────────────────────
+.actionIcons {
+  position: absolute;
+  right: 3rem;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+
+  button[mat-icon-button] {
+    color: var(--accent);
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+
+    // suppress Material's default state-layer tint
+    ::ng-deep .mat-mdc-button-persistent-ripple { display: none; }
+    ::ng-deep .mat-mdc-button-ripple            { display: none; }
+
+    mat-icon {
+      font-size: 1.35rem;
+      width: 1.35rem;
+      height: 1.35rem;
+      transition: color 0.15s;
+    }
+
+    &:hover {
+      background: rgba(var(--accent-rgb), 0.1) !important;
+      border-radius: 50%;
+
+      mat-icon { color: var(--accent-hover); }
+    }
+  }
+}
+
+.mat-mdc-menu-item {
+  min-height: 35px !important;
+  height: 35px;
+  padding-left: 10px !important;
+  padding-right: 5px !important;
+  font-size: 15px;
+  border-bottom: 1px solid #ddd !important;
+}
+
+.mat-mdc-menu-item:hover {
+  background-color: var(--accent-hover-light) !important;
+}
+
+// Date-format select wrapper inside xr-action-menu
+::ng-deep .xr-action-menu .menu-date-format {
+  padding: 0 0.5rem 0.6rem;
+
+  .menu-group-label {
+    border-top: 1px solid var(--border);
+  }
+
+  .date-format-select {
+    display: block;
+    width: 100%;
+    margin-top: 0.4rem;
+    appearance: none;
+    background-color: var(--bg-secondary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2322b71b'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 1.75rem 0.35rem 0.7rem;
+    font-size: 0.85rem;
+    height: 34px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+    }
+  }
+}
+
+// Menu section header (non-clickable group label inside xr-action-menu)
+::ng-deep .xr-action-menu .menu-group-label {
+  padding: 0.4rem 0.75rem 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  cursor: default;
+  user-select: none;
+}
+
+
+// ─── Panel theming (mirrors excel-conversion) ─────────────────────────────────
+::ng-deep .filters-panel,
+::ng-deep .results-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px var(--shadow) !important;
+
+  .mat-expansion-panel-header {
+    background: var(--bg-card) !important;
+    border-radius: 12px !important;
+
+    &:hover {
+      background: var(--bg-secondary) !important;
+    }
+  }
+
+  .mat-expansion-panel-header-title {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mat-expansion-panel-header-description {
+    color: var(--text-secondary) !important;
+    font-size: 0.85rem;
+  }
+
+  .mat-expansion-indicator::after {
+    color: var(--accent) !important;
+  }
+
+  .mat-expansion-panel-body {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+}
+
+::ng-deep .results-panel {
+  margin-top: 2rem !important;
+}
+
+.panel-icon {
+  color: var(--accent);
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+// ─── Filter form ──────────────────────────────────────────────────────────────
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5rem;
+  align-items: flex-start;
+  padding: 0.5rem 0 0.75rem;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hint-text {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.currency-pair,
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// ─── Native selects (same style as excel-conversion .map-select) ─────────────
+.map-select {
+  appearance: none;
+  background-color: var(--bg-secondary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2322b71b'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 1.75rem 0.35rem 0.7rem;
+  font-size: 0.875rem;
+  height: 38px;
+  min-width: 160px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+}
+
+// ─── Date inputs ──────────────────────────────────────────────────────────────
+.date-input {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.875rem;
+  height: 38px;
+  min-width: 148px;
+  outline: none;
+  color-scheme: light;
+  :host-context(body.dark-theme) & { color-scheme: dark; }
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.arrow-icon {
+  color: var(--accent);
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+// ─── Error banner ─────────────────────────────────────────────────────────────
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  margin-top: 1rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--danger, #ef4444);
+  font-size: 0.875rem;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Loading row ──────────────────────────────────────────────────────────────
+.loading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ─── Results table ────────────────────────────────────────────────────────────
+.table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 600px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.rates-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  background: var(--bg-card);
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+
+    tr {
+      background: var(--bg-secondary);
+
+      th {
+        padding: 0.6rem 0.9rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-primary);
+        border-bottom: 2px solid var(--accent);
+        white-space: nowrap;
+      }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+
+    &:last-child { border-bottom: none; }
+    &:nth-child(even) { background: rgba(var(--accent-rgb), 0.025); }
+    &:hover { background: rgba(var(--accent-rgb), 0.07); }
+  }
+
+  td {
+    padding: 0.45rem 0.9rem;
+    color: var(--text-primary);
+    vertical-align: middle;
+  }
+}
+
+// Wide table: all-currencies mode
+.rates-table--wide {
+  min-width: max-content;
+}
+
+// Sticky left column (Date)
+.sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: inherit;
+
+  thead tr & {
+    background: var(--bg-secondary);
+    z-index: 3;
+  }
+}
+
+.date-cell {
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.rate-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+// ─── No data message ──────────────────────────────────────────────────────────
+.no-data-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+
+  mat-icon {
+    color: var(--accent);
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}
+
+// ─── Dual listbox (To Currencies) ────────────────────────────────────────────
+.dual-listbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.listbox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.listbox-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.listbox-select {
+  appearance: none;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  width: 130px;
+  height: 200px;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+
+  option:checked {
+    background-color: rgba(var(--accent-rgb), 0.15);
+    color: var(--text-primary);
+  }
+}
+
+.listbox-arrows {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+  padding-top: 4rem;
+}
+
+.arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0.2rem;
+  transition: background 0.15s, border-color 0.15s;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  &:hover {
+    background: rgba(var(--accent-rgb), 0.1);
+    border-color: var(--accent);
+  }
+}

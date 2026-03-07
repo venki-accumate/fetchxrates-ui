@@ -1,0 +1,27 @@
+<div class="success-wrap">
+  <div class="success-card" role="status" aria-live="polite">
+    <div class="success-icon" aria-hidden="true">✓</div>
+
+    <h1 class="success-title" *ngIf="sessionId">Congratulations!</h1>
+    <p class="success-subtitle" *ngIf="sessionId">Your payment went through successfully.</p>
+
+    <div class="success-body">
+      <p class="success-text">
+        Thank you <span class="success-name">{{ username }}</span> for registering with us.
+      </p>
+
+      <p class="success-text">
+        We’re currently setting up your account. You should gain access shortly.
+      </p>
+
+      <p class="success-note">
+        You’ll receive an email once your account is active — this can take up to
+        <strong>30 minutes</strong>.
+      </p>
+    </div>
+
+    <div class="success-help">
+      Didn’t get an email? Check spam/junk, or try again in a few minutes.
+    </div>
+  </div>
+</div>

@@ -1,0 +1,212 @@
+<div class="row">
+  <div class="col-12">
+    <mat-accordion>
+
+      <!-- ── Existing Schedules panel (shown only if user has scheduling) ───── -->
+      <mat-expansion-panel *ngIf="hasScheduling()" [expanded]="true" class="schedules-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">event_repeat</mat-icon>
+            Your Schedules
+            <span *ngIf="hasUnsavedChanges()" class="unsaved-badge">
+              <mat-icon>warning_amber</mat-icon>Unsaved changes
+            </span>
+          </mat-panel-title>
+          <mat-panel-description>Manage your active report delivery schedules</mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div *ngIf="pendingSchedules().length === 0" class="no-data-msg">
+          <mat-icon>inbox</mat-icon>
+          No schedules found.
+        </div>
+
+        <div *ngIf="pendingSchedules().length > 0" class="table-container">
+          <table mat-table [dataSource]="scheduleTableSource" class="schedule-table">
+
+            <ng-container matColumnDef="frequency">
+              <th mat-header-cell *matHeaderCellDef>Frequency</th>
+              <td mat-cell *matCellDef="let row">{{ displayFrequency(row.frequency) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="fromCurrency">
+              <th mat-header-cell *matHeaderCellDef>From</th>
+              <td mat-cell *matCellDef="let row">{{ row.fromCurrency }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="toCurrencies">
+              <th mat-header-cell *matHeaderCellDef>To Currencies</th>
+              <td mat-cell *matCellDef="let row">{{ displayToCurrencies(row.toCurrencies) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="deliveryFormat">
+              <th mat-header-cell *matHeaderCellDef>Format</th>
+              <td mat-cell *matCellDef="let row">{{ displayFormat(row.deliveryFormat) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="statistics">
+              <th mat-header-cell *matHeaderCellDef>Statistics</th>
+              <td mat-cell *matCellDef="let row">{{ displayStatistics(row) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="recipients">
+              <th mat-header-cell *matHeaderCellDef>Recipients</th>
+              <td mat-cell *matCellDef="let row" class="recipients-cell">{{ displayRecipients(row) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+              <td mat-cell *matCellDef="let row" class="actions-cell">
+                <button
+                  mat-icon-button
+                  (click)="editScheduleRow(row)"
+                  [matTooltip]="row.id === editingScheduleId ? 'Currently editing' : 'Edit'"
+                  class="action-btn edit-btn"
+                  [class.is-editing]="row.id === editingScheduleId">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  (click)="deleteScheduleRow(row.id)"
+                  matTooltip="Delete"
+                  class="action-btn delete-btn">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="scheduleTableColumns"></tr>
+            <tr mat-row
+                *matRowDef="let row; columns: scheduleTableColumns;"
+                [class.editing-row]="row.id === editingScheduleId">
+            </tr>
+          </table>
+        </div>
+      </mat-expansion-panel>
+
+      <!-- Spinner outside all panels to avoid CDK projection issues -->
+      <ngx-spinner
+        bdColor="rgba(0,0,0,0.8)"
+        size="medium"
+        color="#22b71b"
+        type="line-scale"
+        [fullScreen]="true">
+        <p style="color:white">Processing schedules…</p>
+      </ngx-spinner>
+
+      <!-- ── Create / Edit Schedule panel ──────────────────────────────────── -->
+      <mat-expansion-panel [expanded]="true" class="form-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">{{ isEditMode ? 'edit_calendar' : 'add_circle_outline' }}</mat-icon>
+            {{ isEditMode ? 'Edit Schedule' : 'New Schedule' }}
+          </mat-panel-title>
+          <mat-panel-description>
+            {{ isEditMode ? 'Modify the selected schedule, then click Save Schedule' : 'Configure a new automated report delivery' }}
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="filter-form">
+
+          <!-- Frequency -->
+          <div class="filter-section">
+            <span class="filter-label">Frequency</span>
+            <select class="map-select" [(ngModel)]="frequency" (ngModelChange)="validationError.set('')">
+              <option *ngFor="let f of FREQUENCIES" [value]="f.value">{{ f.label }}</option>
+            </select>
+          </div>
+
+          <!-- From Currency -->
+          <div class="filter-section">
+            <span class="filter-label">From Currency</span>
+            <select class="map-select" [(ngModel)]="fromCurrency" (ngModelChange)="validationError.set('')">
+              <option value="" disabled>Select currency</option>
+              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <!-- To Currencies dual listbox -->
+          <div class="filter-section">
+            <span class="filter-label">
+              To Currencies
+              <span class="hint-text">&nbsp;· leave empty for all</span>
+            </span>
+            <div class="dual-listbox">
+              <div class="listbox">
+                <label class="listbox-label">Available</label>
+                <select #availableSelect multiple class="listbox-select">
+                  <option
+                    *ngFor="let c of availableToCurrencies"
+                    [style.display]="c === fromCurrency ? 'none' : ''"
+                    [value]="c">{{ c }}</option>
+                </select>
+              </div>
+              <div class="listbox-arrows">
+                <button type="button" class="arrow-btn" title="Add selected" (click)="moveRight()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <button type="button" class="arrow-btn" title="Remove selected" (click)="moveLeft()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+              <div class="listbox">
+                <label class="listbox-label">
+                  Selected
+                  <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
+                </label>
+                <select #selectedSelect multiple class="listbox-select">
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delivery Format -->
+          <div class="filter-section">
+            <span class="filter-label">Delivery Format</span>
+            <select class="map-select" [(ngModel)]="deliveryFormat" (ngModelChange)="validationError.set('')">
+              <option *ngFor="let f of FORMATS" [value]="f.value">{{ f.label }}</option>
+            </select>
+          </div>
+
+          <!-- Show Statistics toggle (weekly / monthly only) -->
+          <div class="filter-section" *ngIf="showStatisticsToggle">
+            <span class="filter-label">Include Statistics</span>
+            <div class="toggle-wrapper">
+              <mat-slide-toggle [(ngModel)]="showStatistics" class="stats-toggle">
+                <span class="toggle-label">{{ showStatistics ? 'Yes' : 'No' }}</span>
+              </mat-slide-toggle>
+            </div>
+          </div>
+
+          <!-- Additional Email Recipients -->
+          <div class="filter-section recipients-section">
+            <span class="filter-label">
+              Additional Recipients
+              <span class="hint-text">&nbsp;· max 3, comma-separated</span>
+            </span>
+            <input
+              type="text"
+              class="recipients-input"
+              [(ngModel)]="emailRecipientsInput"
+              placeholder="email1@example.com, email2@example.com"
+              (ngModelChange)="validationError.set('')">
+            <span class="hint-text recipients-note">Your account email is always included.</span>
+          </div>
+
+        </div>
+
+        <div *ngIf="validationError()" class="error-banner">
+          <mat-icon>error_outline</mat-icon>
+          {{ validationError() }}
+        </div>
+
+      </mat-expansion-panel>
+
+    </mat-accordion>
+  </div>
+</div>
+
+<app-button-bar
+  (action)="handleAction($event)"
+  [config]="buttonConfig">
+</app-button-bar>

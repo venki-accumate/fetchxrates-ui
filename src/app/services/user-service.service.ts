@@ -8,7 +8,9 @@ import { BehaviorSubject } from 'rxjs';
 export class UserServiceService {
   private userSubject = new BehaviorSubject<any>(null);
   user$ = this.userSubject.asObservable();
-  userObject: any = {};
+  userObject: any = {
+    hasScheduling: false
+  };
 
   constructor() {}
 
@@ -18,6 +20,11 @@ export class UserServiceService {
     console.log(username, userId);
     this.userObject.userName = username;
     this.userObject.userId = userId;
+    this.userSubject.next(this.userObject);
+  }
+
+  setHasScheduling(value: boolean): void {
+    this.userObject = { ...this.userObject, hasScheduling: value };
     this.userSubject.next(this.userObject);
   }
 

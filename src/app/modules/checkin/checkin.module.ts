@@ -6,6 +6,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { CheckinComponent } from './checkin.component';
 import { PricingComponent } from './pricing/pricing.component';
+import { CheckinRoutingModule } from './checkin-routing.module';
 
 const routes: Routes = [
   {
@@ -25,7 +26,8 @@ const routes: Routes = [
     RouterModule.forChild(routes),
     PricingComponent,
     MatTabsModule,
-    NgxSpinnerModule
+    NgxSpinnerModule,
+    CheckinRoutingModule
   ]
 })
 export class CheckinModule { }

@@ -1,0 +1,248 @@
+<div class="row">
+  <div class="col-12">
+    <mat-accordion>
+
+      <!-- ── Filters panel ────────────────────────────────────────────────────── -->
+      <mat-expansion-panel [expanded]="true" class="filters-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">bar_chart</mat-icon>
+            Currency Statistics
+          </mat-panel-title>
+          <mat-panel-description>
+            Select currencies and a period range to compute historical statistics
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="filter-form">
+
+          <!-- Period Type toggle -->
+          <div class="filter-section">
+            <span class="filter-label">Period Type</span>
+            <div class="toggle-group">
+              <button class="toggle-btn" [class.active]="periodType() === 'monthly'" (click)="setPeriodType('monthly')">Monthly</button>
+              <button class="toggle-btn" [class.active]="periodType() === 'yearly'"  (click)="setPeriodType('yearly')">Yearly</button>
+            </div>
+          </div>
+
+          <!-- Period Range -->
+          <div class="filter-section">
+            <span class="filter-label">
+              Period Range
+              <span class="hint-text">&nbsp;· max 5 years</span>
+            </span>
+            <div class="date-range">
+              <ng-container *ngIf="periodType() === 'monthly'">
+                <input
+                  type="month"
+                  class="date-input"
+                  [(ngModel)]="startPeriod"
+                  [max]="maxMonthInput"
+                  (ngModelChange)="onStartPeriodChange()">
+                <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                <input
+                  type="month"
+                  class="date-input"
+                  [(ngModel)]="endPeriod"
+                  [min]="startPeriod"
+                  [max]="maxEndPeriod"
+                  [disabled]="!startPeriod"
+                  (ngModelChange)="validationError.set('')">
+              </ng-container>
+
+              <ng-container *ngIf="periodType() === 'yearly'">
+                <select
+                  class="map-select"
+                  [(ngModel)]="startPeriod"
+                  (ngModelChange)="onStartPeriodChange()">
+                  <option value="" disabled>Start year</option>
+                  <option *ngFor="let y of yearOptions" [value]="y.toString()">{{ y }}</option>
+                </select>
+                <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                <select
+                  class="map-select"
+                  [(ngModel)]="endPeriod"
+                  [disabled]="!startPeriod"
+                  (ngModelChange)="validationError.set('')">
+                  <option value="" disabled>End year</option>
+                  <option
+                    *ngFor="let y of yearOptions"
+                    [value]="y.toString()"
+                    [disabled]="y.toString() < startPeriod || y.toString() > maxEndPeriod">
+                    {{ y }}
+                  </option>
+                </select>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- From Currency -->
+          <div class="filter-section">
+            <span class="filter-label">From Currency</span>
+            <select
+              class="map-select"
+              [(ngModel)]="fromCurrency"
+              (ngModelChange)="validationError.set('')">
+              <option value="" disabled>Select currency</option>
+              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <!-- To Currencies dual listbox -->
+          <div class="filter-section">
+            <span class="filter-label">
+              To Currencies
+              <span class="hint-text">&nbsp;· leave empty for all</span>
+            </span>
+            <div class="dual-listbox">
+              <div class="listbox">
+                <label class="listbox-label">Available</label>
+                <select #availableSelect multiple class="listbox-select">
+                  <option
+                    *ngFor="let c of availableToCurrencies"
+                    [style.display]="c === fromCurrency ? 'none' : ''"
+                    [value]="c">{{ c }}</option>
+                </select>
+              </div>
+
+              <div class="listbox-arrows">
+                <button type="button" class="arrow-btn" title="Add selected" (click)="moveRight()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <button type="button" class="arrow-btn" title="Remove selected" (click)="moveLeft()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+
+              <div class="listbox">
+                <label class="listbox-label">
+                  Selected
+                  <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
+                </label>
+                <select #selectedSelect multiple class="listbox-select">
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div *ngIf="validationError()" class="error-banner">
+          <mat-icon>error_outline</mat-icon>
+          {{ validationError() }}
+        </div>
+      </mat-expansion-panel>
+
+      <!-- Spinner outside accordion panels to avoid CDK projection issues -->
+      <ngx-spinner
+        bdColor="rgba(0, 0, 0, 0.8)"
+        size="medium"
+        color="#22b71b"
+        type="line-scale"
+        [fullScreen]="true">
+        <p style="color: white">Computing statistics…</p>
+      </ngx-spinner>
+
+      <!-- ── Results panel ─────────────────────────────────────────────────────── -->
+      <mat-expansion-panel
+        *ngIf="hasSearched()"
+        [expanded]="true"
+        class="results-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">insights</mat-icon>
+            {{ resultTitle }}
+          </mat-panel-title>
+          <mat-panel-description>{{ resultSummary }}</mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div *ngIf="!isLoading && resultLength() === 0" class="no-data-msg">
+          <mat-icon>info_outline</mat-icon>
+          No data found for the selected period range.
+        </div>
+
+        <div *ngIf="!isLoading && resultLength() > 0">
+
+          <!-- Result controls bar: group-by filters (left) + download (right) -->
+          <div class="result-controls">
+
+            <div class="result-filters" *ngIf="showGroupBy">
+              <!-- Group by toggle -->
+              <div class="control-group">
+                <span class="filter-label">Group By</span>
+                <div class="toggle-group">
+                  <button class="toggle-btn" [class.active]="groupBy() === 'currency'"   (click)="onGroupByChange('currency')">Currency</button>
+                  <button class="toggle-btn" [class.active]="groupBy() === 'statistics'" (click)="onGroupByChange('statistics')">Statistics</button>
+                </div>
+              </div>
+
+              <!-- Currency selector (when groupBy = currency) -->
+              <div class="control-group" *ngIf="groupBy() === 'currency'">
+                <span class="filter-label">Currency</span>
+                <select
+                  class="map-select"
+                  [(ngModel)]="selectedCurrency"
+                  (ngModelChange)="onSubFilterChange()">
+                  <option *ngFor="let c of availableCurrenciesInResult" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+
+              <!-- Metric selector (when groupBy = statistics) -->
+              <div class="control-group" *ngIf="groupBy() === 'statistics'">
+                <span class="filter-label">Statistic</span>
+                <select
+                  class="map-select"
+                  [(ngModel)]="selectedMetric"
+                  (ngModelChange)="onSubFilterChange()">
+                  <option *ngFor="let m of METRICS" [value]="m">{{ m }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Download button -->
+            <div class="result-actions">
+              <button mat-icon-button [matMenuTriggerFor]="downloadMenu" matTooltip="Download" aria-label="Download">
+                <mat-icon>download</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Download menu -->
+          <mat-menu #downloadMenu="matMenu" xPosition="before" panelClass="xr-action-menu">
+            <button mat-menu-item (click)="downloadExcel()">
+              <mat-icon>table_chart</mat-icon>
+              <span>Download Excel</span>
+            </button>
+            <button mat-menu-item (click)="downloadCsv()">
+              <mat-icon>description</mat-icon>
+              <span>Download CSV</span>
+            </button>
+            <button mat-menu-item (click)="downloadPdf()">
+              <mat-icon>picture_as_pdf</mat-icon>
+              <span>Download PDF</span>
+            </button>
+          </mat-menu>
+
+          <app-data-table
+            [columnHeaders]="tableColumnHeaders()"
+            [dataSource]="tableData()"
+            [disablePagination]="false">
+          </app-data-table>
+
+        </div>
+      </mat-expansion-panel>
+
+    </mat-accordion>
+  </div>
+</div>
+
+<app-button-bar
+  (action)="handleAction($event)"
+  [config]="buttonConfig">
+</app-button-bar>
+
+<!-- Hidden report generators — triggered programmatically via @ViewChild -->
+<app-excel-report       #excelReport style="display:none"></app-excel-report>
+<app-csv-report         #csvReport   style="display:none"></app-csv-report>
+<app-generic-pdf-report #pdfReport   style="display:none"></app-generic-pdf-report>

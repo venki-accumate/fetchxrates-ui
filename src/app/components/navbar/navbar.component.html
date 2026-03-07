@@ -1,7 +1,7 @@
-<nav class="navbar">
+<nav class="navbar" [class.minimal-mode]="minimalMode">
   <div class="container">
     <div class="navbar-content">
-      <div class="navbar-left">
+      <div class="navbar-left" *ngIf="!minimalMode">
         <a routerLink="/dashboard" class="logo" (click)="closeMobileMenu()">
           <span class="logo-part logo-fetch">Fetch</span>
           <img src="textLogo.png" alt="X" class="logo-image">
