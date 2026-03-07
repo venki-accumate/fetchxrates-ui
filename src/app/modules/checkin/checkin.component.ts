@@ -45,31 +45,24 @@ export class CheckinComponent implements OnInit {
   }
 
   private async handleUserDataAndNavigation(): Promise<void> {
-    const user = await this.checkIfLoggedIn();
-    console.log('Checkin user:', user);
+    const user = this.authState.getUser();
     if (!user) {
-      console.log('No authenticated user found');
       this.enterSignupFlowFromRoute();
       return;
     }
-    console.log('Authenticated user found:', user);
     this.spinner.show();
     try {
       const userData = await this.fetchUserData(user.email);
-      console.log('User Exists in S3:', userData);
       this.userExists(userData);
     } catch (err: any) {
-      console.log('User doesnt exist in s3');
       const localData = JSON.parse(localStorage.getItem('stripeFlow') || '{}');
       if (localData?.selectedPlan && localData?.googleFlow) {
-        console.log('Google signup flow detected, redirecting to checkout');
         this.startCheckout({
           priceId: localData.selectedPlan,
           userData: user
         });
         return;
       }
-      console.log('New user flow, showing signup fields');
       this.newUser(err, user);
     } finally {
       this.cdRef.detectChanges();
@@ -111,12 +104,11 @@ export class CheckinComponent implements OnInit {
     this.authState.setUserData(userData);
     // Check subscription status
     if (userData.subscription === 'Active') {
-      // Redirect to homePage from user data
       const homePage = userData.homePage || '/dashboard';
       this.spinner.hide();
       this.router.navigate([homePage]);
     }
-    if(userData.subscription === 'payment_succeeded_pending_activation') {
+    if(userData.substatus === 'payment_succeeded_pending_activation') {
       this.spinner.hide();
       this.router.navigate(['/payment-success']);
     }
@@ -179,6 +171,7 @@ export class CheckinComponent implements OnInit {
     * @param emitJSON JSON object containing priceId and userData
   */
   async startCheckout(emitJSON: any): Promise<void> {
+    emitJSON = JSON.parse(emitJSON);
     this.saveUserData(emitJSON.userData);
     try {
       const response = await new Promise<CheckoutSessionResponse>((resolve, reject) => {
