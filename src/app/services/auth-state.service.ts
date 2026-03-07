@@ -37,7 +37,7 @@
         email
       };
 
-      await this.setUser(hydratedUser ?? null);
+      this.userSubject.next(hydratedUser);
 
     } catch {
       this.userDataSubject.next(null);
