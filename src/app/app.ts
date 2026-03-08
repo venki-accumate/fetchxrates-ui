@@ -25,7 +25,8 @@ export class AppComponent implements OnInit {
     private sessionService: SessionService,
     private eventBus: EventBusService,
     private snackBar: MatSnackBar,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private authState: AuthStateService
   ) {
     // Subscribe to event bus for snackbar notifications
     this.eventBus.snackbar$.pipe(
@@ -57,8 +58,10 @@ export class AppComponent implements OnInit {
 
   // Set initial values synchronously for the first load
   const data = resolveLeafData();
-  this.showLayout = !data['hideLayout'];
+  this.showLayout = this.authState.hasActiveSubscription() ? 
+  !data['hideLayout'] : false;
   this.hideMenuItems = !!data['hideMenuItems'];
+  
 }
 
 }

@@ -1,14 +1,11 @@
-import { Component, OnInit, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, Input, Output, EventEmitter, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { AuthStateService } from '../../../services/auth-state.service';
-import { FetchXRApiService } from '../../../services/fetchXR-api.service';
 import { FeaturesDialogComponent } from './features-dialog.component';
 import { NavbarComponent } from '../../../components/navbar/navbar.component';
 import { signInWithRedirect } from '@aws-amplify/auth/cognito';
@@ -19,7 +16,6 @@ import { signInWithRedirect } from '@aws-amplify/auth/cognito';
   imports: [
     CommonModule,
     FormsModule,
-    MatTabsModule,
     MatDialogModule,
     MatIconModule,
     MatButtonModule,
@@ -38,174 +34,120 @@ export class PricingComponent implements OnInit {
   @Output() termsAcceptedChange = new EventEmitter<boolean>();
   @Output() startStripeCheckout = new EventEmitter<string>();
 
-  pricingTiers: any[] = [];
-  loading: boolean = true;
-  billingCycle: 'monthly' | 'yearly' = 'monthly';
-  tierType: 'dashboard' | 'restapi' = 'dashboard';
-  selectedTabIndex: number = 0;
-  monthlyPrices: number[] = [];
-  yearlyPrices: number[] = [];
-  allTiers: any = {};
-  userLoggedIn: boolean = false;
+  // ── Signals ────────────────────────────────────────────────────────────────
+  readonly loading = signal(true);
+  readonly billingCycle = signal<'monthly' | 'yearly'>('monthly');
+  readonly tierType = signal<'dashboard' | 'restapi'>('dashboard');
+  readonly activePlan = signal('professional_dashboard');
+  readonly errorMsg = signal('');
+  readonly userLoggedIn = signal(false);
 
-  faqs = [
-    {
-      question: 'Can I change plans at any time?',
-      answer: 'Yes, you can upgrade or downgrade your plan at any time. Upgrades take effect immediately, while downgrades will take effect at the start of your next billing cycle.',
-      open: false
-    },
-    {
-      question: 'What happens if I exceed my request limit?',
-      answer: 'If you exceed your monthly limit, API requests will return a 429 (Too Many Requests) error. You can upgrade your plan or wait until the next billing cycle. We\'ll send you email notifications before you reach your limit.',
-      open: false
-    },
-    {
-      question: 'Is there a free trial for paid plans?',
-      answer: 'Yes, all paid plans come with a 14-day free trial. No credit card required to start your trial.',
-      open: false
-    },
-    {
-      question: 'What payment methods do you accept?',
-      answer: 'We accept all major credit cards (Visa, Mastercard, American Express), as well as PayPal for monthly subscriptions. Annual plans can also be paid via bank transfer.',
-      open: false
-    },
-    {
-      question: 'Do you offer refunds?',
-      answer: 'Yes, we offer a 30-day money-back guarantee for annual plans. Monthly subscriptions can be cancelled at any time with no refunds for the current month.',
-      open: false
-    },
-    {
-      question: 'Can I get a discount for annual billing?',
-      answer: 'Yes! Save 20% by switching to annual billing. Contact our sales team for enterprise volume discounts.',
-      open: false
-    }
-  ];
+  private readonly monthlyPrices = signal<number[]>([]);
+  private readonly yearlyPrices = signal<number[]>([]);
+  private readonly allTiers = signal<any>({});
+
+  readonly pricingTiers = computed(() => {
+    const tiers = this.allTiers();
+    const type = this.tierType();
+    return tiers[type] ?? [];
+  });
+
+  readonly currentPrices = computed(() =>
+    this.billingCycle() === 'monthly' ? this.monthlyPrices() : this.yearlyPrices()
+  );
 
   constructor(
     private http: HttpClient,
     private authState: AuthStateService,
-    private dialog: MatDialog,
-    private cdRef: ChangeDetectorRef
-  ) { }
-
-  openFeaturesDialog(tier: any): void {
-    this.dialog.open(FeaturesDialogComponent, {
-      width: '600px',
-      data: { tier, billingCycle: this.billingCycle }
-    });
-  }
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
-    console.log('PricingComponent ngOnInit called');
-    this.loading = true;
-    
+    this.activePlan.set(this.selectedPlan || 'professional_dashboard');
+    this.errorMsg.set(this.error || '');
+
     this.http.get<any>('assets/pricing-tiers.json').subscribe({
       next: (data) => {
-        console.log('Pricing data loaded:', data);
-        setTimeout(() => {
-          this.monthlyPrices = data.pricing.monthly;
-          this.yearlyPrices = data.pricing.yearly;
-          this.allTiers = data.tiers;
-          this.pricingTiers = data.tiers.dashboard;
-          console.log('Pricing tiers set:', this.pricingTiers);
-          this.loading = false;
-        });
+        this.monthlyPrices.set(data.pricing.monthly);
+        this.yearlyPrices.set(data.pricing.yearly);
+        this.allTiers.set(data.tiers);
+        this.loading.set(false);
       },
-      error: (error) => {
-        console.error('Error loading pricing tiers:', error);
-        this.error = 'Failed to load pricing information';
-        this.loading = false;
+      error: () => {
+        this.errorMsg.set('Failed to load pricing information');
+        this.loading.set(false);
       }
     });
+
     const user = this.authState.getUser();
     if (user) {
       this.userData.email = user.email;
-      this.userLoggedIn = true;
-      this.cdRef.detectChanges();
+      this.userLoggedIn.set(true);
     }
   }
 
   selectPlan(planId: string): void {
+    this.activePlan.set(planId);
     this.selectedPlan = planId;
   }
 
   toggleBillingCycle(cycle: 'monthly' | 'yearly'): void {
-    this.billingCycle = cycle;
+    this.billingCycle.set(cycle);
   }
-
 
   switchTierType(type: 'dashboard' | 'restapi'): void {
-    this.tierType = type;
-    this.pricingTiers = this.allTiers[type];
-    this.selectedTabIndex = type === 'dashboard' ? 0 : 1;
+    this.tierType.set(type);
+    const popular = this.pricingTiers().find((t: any) => t.popular);
+    if (popular) { this.selectPlan(popular.id); }
   }
 
-  onTabChange(index: number): void {
-    const type = index === 0 ? 'dashboard' : 'restapi';
-    this.switchTierType(type);
-  }
-
-  getPrice(index: number): number {
-    return this.billingCycle === 'monthly'
-      ? this.monthlyPrices[index]
-      : this.yearlyPrices[index];
-  }
-
-  getSavingsPercent(): number {
-    // Calculate savings percentage for yearly billing
-    const monthlyTotal = this.monthlyPrices[1] * 12; // Using professional tier
-    const yearlyTotal = this.yearlyPrices[1];
-    return Math.round(((monthlyTotal - yearlyTotal) / monthlyTotal) * 100);
-  }
-
-  toggleFAQ(index: number): void {
-    this.faqs[index].open = !this.faqs[index].open;
+  openFeaturesDialog(tier: any): void {
+    this.dialog.open(FeaturesDialogComponent, {
+      width: '600px',
+      data: { tier, billingCycle: this.billingCycle() }
+    });
   }
 
   validateSignupFields(): boolean {
-    if (!this.showSignupFields) {
-      return true; // No validation needed if signup fields not shown
-    }
+    if (!this.showSignupFields) return true;
 
-    if (!this.userData.firstName || !this.userData.lastName || !this.userData.email || !this.userData.password) {
-      this.error = 'Please fill in all required fields';
-      return false;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(this.userData.email)) {
-      this.error = 'Please enter a valid email address';
-      return false;
-    }
-
-    // Password validation (min 8 characters)
-    if (this.userData.password.length < 8) {
-      this.error = 'Password must be at least 8 characters long';
+    if (!this.userData.firstName || !this.userData.lastName ||
+        (!this.userLoggedIn() && (!this.userData.email || !this.userData.password))) {
+      this.errorMsg.set('Please fill in all required fields');
       return false;
     }
 
     if (!this.termsAccepted) {
-      this.error = 'Please accept the Terms and Conditions';
+      this.errorMsg.set('Please accept the Terms and Conditions');
+      return false;
+    }
+
+    if (this.userLoggedIn()) return true;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.userData.email)) {
+      this.errorMsg.set('Please enter a valid email address');
+      return false;
+    }
+
+    if (this.userData.password.length < 8) {
+      this.errorMsg.set('Password must be at least 8 characters long');
       return false;
     }
 
     return true;
   }
 
-  async startCheckout(priceId: string) {
-    let emitJSON: any = {};
-    if (this.showSignupFields) {
-      if (!this.validateSignupFields()) {
-        return;
-      }
-    }
-    priceId = this.billingCycle === 'monthly' ? `${priceId}_monthly` : `${priceId}_yearly`;
+  async startCheckout(priceId: string): Promise<void> {
+    this.errorMsg.set('');
+    if (this.showSignupFields && !this.validateSignupFields()) return;
+
+    const cycle = this.billingCycle();
+    priceId = `${priceId}_${cycle}`;
     const user = this.authState.getUser();
     const email = user?.email || this.userData.email;
 
     const newUserData = {
-      email: email,
+      email,
       emailHash: await this.emailToSafeKey(email),
       firstName: this.userData.firstName,
       lastName: this.userData.lastName,
@@ -215,10 +157,8 @@ export class PricingComponent implements OnInit {
       homePage: '/dashboard',
       createdAt: new Date().toISOString()
     };
-    emitJSON.priceId = priceId;
-    emitJSON.userData = newUserData;
-    console.log('Emitting checkout event with data:', emitJSON);
-    this.startStripeCheckout.emit(JSON.stringify(emitJSON));
+
+    this.startStripeCheckout.emit(JSON.stringify({ priceId, userData: newUserData }));
   }
 
   async emailToSafeKey(email: string): Promise<string> {
@@ -230,9 +170,9 @@ export class PricingComponent implements OnInit {
       .join('');
   }
 
-  async signInWith(provider: string) {
+  async signInWith(provider: string): Promise<void> {
     const data = {
-      selectedPlan: `${this.selectedPlan}_${this.billingCycle}`,
+      selectedPlan: `${this.activePlan()}_${this.billingCycle()}`,
       googleFlow: true
     };
     localStorage.setItem('stripeFlow', JSON.stringify(data));

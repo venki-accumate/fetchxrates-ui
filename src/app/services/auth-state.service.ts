@@ -16,33 +16,31 @@
     constructor() {}
 
     /**
-     * Hydrate user from Amplify session on app start
+     * Hydrate user from Amplify session on app start.
+     * Must be called on every component init to restore auth state after page refresh.
      */
     async hydrateFromAmplify(): Promise<void> {
-    try {
-      const session = await fetchAuthSession();
-      const idToken = session?.tokens?.idToken;
+      try {
+        const session = await fetchAuthSession();
+        const idToken = session?.tokens?.idToken;
 
-      if (!idToken) {
-        this.setUser(null);
-        this.userSubject.next(null);
-        return;
+        if (!idToken) {
+          this.userSubject.next(null);
+          return;
+        }
+
+        const user = await getCurrentUser();
+        const payload = idToken.payload;
+        const email      = payload?.['email']       as string | undefined;
+        const givenName  = payload?.['given_name']  as string | undefined;
+        const familyName = payload?.['family_name'] as string | undefined;
+
+        this.userSubject.next({ ...user, email, givenName, familyName });
+
+      } catch {
+        this.userSubject.next(null); // was incorrectly clearing userDataSubject
       }
-
-      const user = await getCurrentUser();
-      const email = idToken.payload?.['email'] as string | undefined;
-
-      const hydratedUser = {
-        ...user,
-        email
-      };
-
-      this.userSubject.next(hydratedUser);
-
-    } catch {
-      this.userDataSubject.next(null);
     }
-  }
 
     /**
      * Set user object from Amplify user and extract userData
@@ -154,10 +152,14 @@
     }
 
     /**
-     * Check if user has active subscription
+     * Check if user has an active subscription.
+     * Source of truth: status + substatus fields written by the Stripe webhook.
      */
     hasActiveSubscription(): boolean {
       const userData = this.userDataSubject.value;
-      return userData?.subscription === 'Active';
+      return (
+        userData?.status === 'active' &&
+        userData?.substatus === 'subscription_created_active'
+      );
     }
   }
