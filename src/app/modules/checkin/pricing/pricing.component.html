@@ -1,111 +1,94 @@
 <div class="pricing-page">
+
   <!-- Left Panel: Pricing Plans -->
   <div class="left-panel">
+    <div class="pricing-card-wrap">
     <div class="pricing-header">
       <h1>Choose Your Plan</h1>
 
-      <!-- Billing Cycle Toggle -->
-      <div class="billing-toggle">
-        <button class="toggle-btn" [class.active]="billingCycle === 'monthly'" (click)="toggleBillingCycle('monthly')">
-          <span>Monthly billing</span>
-        </button>
-        <button class="toggle-btn" [class.active]="billingCycle === 'yearly'" (click)="toggleBillingCycle('yearly')">
-          <span>Yearly billing</span>
-          <mat-icon class="celebrate">celebration</mat-icon>
-        </button>
+      <div class="controls-row">
+        <div class="segment-control">
+          <button class="segment-btn" [class.active]="tierType() === 'dashboard'" (click)="switchTierType('dashboard')">
+            Dashboard
+          </button>
+          <button class="segment-btn" [class.active]="tierType() === 'restapi'" (click)="switchTierType('restapi')">
+            REST API
+          </button>
+        </div>
+
+        <div class="billing-toggle">
+          <button class="toggle-btn" [class.active]="billingCycle() === 'monthly'" (click)="toggleBillingCycle('monthly')">
+            Monthly
+          </button>
+          <button class="toggle-btn" [class.active]="billingCycle() === 'yearly'" (click)="toggleBillingCycle('yearly')">
+            Yearly <span class="save-tag">Save 17%</span>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Tier Type Tabs -->
-    <mat-tab-group class="pricing-tabs" [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
-      <mat-tab label="Dashboard Tier">
-        <div class="plans-container">
-          <div *ngFor="let tier of pricingTiers; let i = index" class="plan-item"
-            [class.selected]="selectedPlan === tier.id" [class.popular]="tier.popular" (click)="selectPlan(tier.id)">
+    @if (loading()) {
+      <div class="loading-state">
+        <mat-icon class="spin">sync</mat-icon>
+        <span>Loading plans...</span>
+      </div>
+    } @else {
+      <div class="plans-container">
+        @for (tier of pricingTiers(); track tier.id; let i = $index) {
+          <div class="plan-card"
+               [class.selected]="activePlan() === tier.id"
+               [class.popular]="tier.popular"
+               (click)="selectPlan(tier.id)">
 
-            <div class="plan-badge" *ngIf="tier.popular">
-              MOST POPULAR
-            </div>
+            @if (tier.popular) {
+              <span class="plan-badge">{{ tier.badgeText || 'RECOMMENDED' }}</span>
+            }
 
-            <div class="plan-content">
-              <div class="plan-left">
-                <input type="radio" [id]="tier.id" name="selectedPlan" [checked]="selectedPlan === tier.id"
-                  (click)="$event.stopPropagation(); selectPlan(tier.id)" />
-                <label [for]="tier.id" class="plan-label">
-                  <h3>{{ tier.name }}</h3>
-                  <button type="button" class="view-features-btn"
-                    (click)="$event.stopPropagation(); openFeaturesDialog(tier)">
-                    <mat-icon>info_outline</mat-icon>
-                    View Features
-                  </button>
-                </label>
-              </div>
-
-              <div class="plan-right">
-                <div class="plan-pricing">
-                  <span class="price">${{ getPrice(i) }}</span>
-                  <span class="period">/{{ billingCycle === 'monthly' ? 'mo' : 'yr' }}</span>
-                </div>
-                <div class="savings-badge" *ngIf="billingCycle === 'yearly'">
-                  Save up to {{ tier.savings || '17' }}%
+            <div class="plan-row">
+              <div class="plan-info">
+                <input type="radio" [id]="tier.id" name="selectedPlan"
+                       [checked]="activePlan() === tier.id"
+                       (click)="$event.stopPropagation(); selectPlan(tier.id)" />
+                <div class="plan-text">
+                  <label [for]="tier.id" class="plan-name">{{ tier.name }}</label>
+                  <span class="plan-desc">{{ tier.description }}</span>
                 </div>
               </div>
+
+              <div class="plan-price">
+                <div class="price-amount">
+                  <span class="price">${{ currentPrices()[i] }}</span>
+                  <span class="period">/ {{ billingCycle() === 'monthly' ? 'mo' : 'yr' }}</span>
+                </div>
+                <button type="button" class="features-btn" title="View features"
+                        (click)="$event.stopPropagation(); openFeaturesDialog(tier)">
+                  <mat-icon>info_outline</mat-icon>
+                </button>
+              </div>
             </div>
+
           </div>
-        </div>
-      </mat-tab>
-
-      <mat-tab label="REST API Tier">
-        <div class="plans-container">
-          <div *ngFor="let tier of pricingTiers; let i = index" class="plan-item"
-            [class.selected]="selectedPlan === tier.id" [class.popular]="tier.popular" (click)="selectPlan(tier.id)">
-
-            <div class="plan-badge" *ngIf="tier.popular">
-              MOST POPULAR
-            </div>
-
-            <div class="plan-content">
-              <div class="plan-left">
-                <input type="radio" [id]="tier.id" name="selectedPlan" [checked]="selectedPlan === tier.id"
-                  (click)="$event.stopPropagation(); selectPlan(tier.id)" />
-                <label [for]="tier.id" class="plan-label">
-                  <h3>{{ tier.name }}</h3>
-                  <button type="button" class="view-features-btn"
-                    (click)="$event.stopPropagation(); openFeaturesDialog(tier)">
-                    <mat-icon>info_outline</mat-icon>
-                    View Features
-                  </button>
-                </label>
-              </div>
-
-              <div class="plan-right">
-                <div class="plan-pricing">
-                  <span class="price">${{ getPrice(i) }}</span>
-                  <span class="period">/{{ billingCycle === 'monthly' ? 'mo' : 'yr' }}</span>
-                </div>
-                <div class="savings-badge" *ngIf="billingCycle === 'yearly'">
-                  Save up to {{ tier.savings || '17' }}%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-tab>
-    </mat-tab-group>
+        }
+      </div>
+    }
+    </div><!-- /pricing-card-wrap -->
   </div>
 
   <!-- Right Panel: Signup Form -->
   <div class="right-panel">
-    <app-navbar [minimalMode]="true" *ngIf="userLoggedIn"></app-navbar>
-    <br/>
-    <div [class]="userLoggedIn ? 'signup-container logged-in' : 'signup-container'">
+    @if (userLoggedIn()) {
+      <app-navbar [minimalMode]="true"></app-navbar>
+      <br/>
+    }
+
+    <div class="signup-container" [class.logged-in]="userLoggedIn()">
       <div class="signup-header">
         <a href="#" class="logo">
           <span class="logo-part logo-fetch">Fetch</span>
           <img src="textLogo.png" alt="X" class="logo-image">
           <span class="logo-part logo-rates">ates</span>
         </a>
-        <h2>You selected <b>{{selectedPlan}}</b> plan</h2>
+        <h2>You selected <b>{{ activePlan() }}</b> plan</h2>
       </div>
 
       <form #signupForm="ngForm" class="signup-form">
@@ -116,54 +99,56 @@
             (ngModelChange)="userDataChange.emit(userData)" placeholder="Last Name *" required />
         </div>
 
-        <input type="email" name="email" [(ngModel)]="userData.email"
+        <input type="email" name="email" [(ngModel)]="userData.email" [disabled]="userLoggedIn()"
           (ngModelChange)="userDataChange.emit(userData)" placeholder="Email *" required />
 
         <input type="text" name="company" [(ngModel)]="userData.company"
           (ngModelChange)="userDataChange.emit(userData)" placeholder="Company" />
 
-        <input type="password" name="password" [(ngModel)]="userData.password" *ngIf="!userLoggedIn"
-          (ngModelChange)="userDataChange.emit(userData)" placeholder="Password *" required />
+        @if (!userLoggedIn()) {
+          <input type="password" name="password" [(ngModel)]="userData.password"
+            (ngModelChange)="userDataChange.emit(userData)" placeholder="Password *" required />
+        }
 
         <div class="terms-container">
           <label class="checkbox-label">
             <input type="checkbox" name="termsAccepted" [(ngModel)]="termsAccepted"
               (ngModelChange)="termsAcceptedChange.emit(termsAccepted)" required />
-            <span>I agree to the <a href="/terms" target="_blank">Terms of Service</a> and <a href="/privacy"
-                target="_blank">Privacy Policy</a></span>
+            <span>I agree to the <a href="/terms" target="_blank">Terms of Service</a> and
+              <a href="/privacy" target="_blank">Privacy Policy</a></span>
           </label>
         </div>
 
-        <div *ngIf="error" class="error-message">
-          {{ error }}
-        </div>
+        @if (errorMsg()) {
+          <div class="error-message">{{ errorMsg() }}</div>
+        }
+        @if (error) {
+          <div class="error-message">{{ error }}</div>
+        }
 
-        <button type="button" class="signup-button" [disabled]="!selectedPlan" (click)="startCheckout(selectedPlan)">
+        <button type="button" class="signup-button" [disabled]="!activePlan()" (click)="startCheckout(activePlan())">
           Create my account
         </button>
 
-        <div class="divider" *ngIf="!userLoggedIn">
-          <span>or</span>
-        </div>
+        @if (!userLoggedIn()) {
+          <div class="divider"><span>or</span></div>
 
-        <button type="button" *ngIf="!userLoggedIn" class="google-signup-button" (click)="signInWith('Google')">
-          <svg width="18" height="18" viewBox="0 0 18 18">
-            <path fill="#4285F4"
-              d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
-            <path fill="#34A853"
-              d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" />
-            <path fill="#FBBC05"
-              d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" />
-            <path fill="#EA4335"
-              d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" />
-          </svg>
-          Sign up with Google
-        </button>
+          <button type="button" class="google-signup-button" (click)="signInWith('Google')">
+            <svg width="18" height="18" viewBox="0 0 18 18">
+              <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+              <path fill="#34A853" d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z"/>
+              <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/>
+              <path fill="#EA4335" d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z"/>
+            </svg>
+            Sign up with Google
+          </button>
 
-        <div class="login-link" *ngIf="!userLoggedIn">
-          Already a customer? <a href="/login">Log In</a>
-        </div>
+          <div class="login-link">
+            Already a customer? <a href="/login">Log In</a>
+          </div>
+        }
       </form>
     </div>
   </div>
+
 </div>

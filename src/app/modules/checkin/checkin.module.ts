@@ -1,19 +1,11 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Routes } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { CheckinComponent } from './checkin.component';
 import { PricingComponent } from './pricing/pricing.component';
 import { CheckinRoutingModule } from './checkin-routing.module';
-
-const routes: Routes = [
-  {
-    path: '',
-    component: CheckinComponent
-  }
-];
 
 @NgModule({
   declarations: [
@@ -23,7 +15,6 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterModule.forChild(routes),
     PricingComponent,
     MatTabsModule,
     NgxSpinnerModule,

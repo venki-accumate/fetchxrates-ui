@@ -5,8 +5,6 @@ import { AuthStateService } from '../../services/auth-state.service';
 import { FetchXRApiService } from '../../services/fetchXR-api.service';
 import { firstValueFrom } from 'rxjs';
 import { StripeCheckoutService, CheckoutSessionResponse } from '../../services/stripe-checkout.service';
-import { fetchAuthSession } from '@aws-amplify/core';
-import { getCurrentUser } from 'aws-amplify/auth';
 
 
 @Component({
@@ -45,6 +43,8 @@ export class CheckinComponent implements OnInit {
   }
 
   private async handleUserDataAndNavigation(): Promise<void> {
+    // Hydrate from Amplify first — restores user on page refresh / direct URL navigation (Issue #1)
+    await this.authState.hydrateFromAmplify();
     const user = this.authState.getUser();
     if (!user) {
       this.enterSignupFlowFromRoute();
@@ -57,10 +57,29 @@ export class CheckinComponent implements OnInit {
     } catch (err: any) {
       const localData = JSON.parse(localStorage.getItem('stripeFlow') || '{}');
       if (localData?.selectedPlan && localData?.googleFlow) {
-        this.startCheckout({
-          priceId: localData.selectedPlan,
-          userData: user
-        });
+        // Build complete user record for Google OAuth new-user checkout (Issue #8)
+        const email = user.email || '';
+        const emailHash = await this.emailToSafeKey(email);
+        let firstName = '';
+        let lastName = '';
+        if (user.username) {
+          const parts = (user.username as string).split(/[\s._-]+/);
+          firstName = parts[0] || '';
+          lastName = parts.slice(1).join(' ') || '';
+        }
+        const newUserData = {
+          email,
+          emailHash,
+          firstName,
+          lastName,
+          company: '',
+          userId: user.userId || null,
+          subscription: 'Inactive',
+          homePage: '/dashboard',
+          createdAt: new Date().toISOString(),
+        };
+        // Fix Issue #2: was passing object to a method that called JSON.parse() on it
+        await this.startCheckout(JSON.stringify({ priceId: localData.selectedPlan, userData: newUserData }));
         return;
       }
       this.newUser(err, user);
@@ -68,24 +87,6 @@ export class CheckinComponent implements OnInit {
       this.cdRef.detectChanges();
       this.spinner.hide();
     }
-  }
-
-  async checkIfLoggedIn() {
-    try {
-      const session = await fetchAuthSession();
-      if (session?.tokens?.idToken) {
-        console.log('User is authenticated');
-        const user = await getCurrentUser();
-        if (user) {
-          const idToken = session.tokens?.idToken?.payload;
-          const givenName = idToken?.['given_name'] as string || '';
-          sessionStorage.setItem('userName', givenName);
-          const email = idToken?.['email'];
-          this.authState.setUser({ ...user, email });
-        }
-      }
-    } catch {}
-    return this.authState.getUser();
   }
 
   private enterSignupFlowFromRoute(): void {
@@ -102,32 +103,28 @@ export class CheckinComponent implements OnInit {
 
   private userExists(userData: any): void {
     this.authState.setUserData(userData);
-    // Check subscription status
-    if (userData.status === 'active' 
-      && userData.substatus === 'subscription_created_active') {
-      const homePage = userData.homePage || '/dashboard';
-      this.spinner.hide();
-      this.router.navigate([homePage]);
-    }
-    if(userData.substatus === 'payment_succeeded_pending_activation') {
-      this.spinner.hide();
+    if (userData.status === 'active' && userData.substatus === 'subscription_created_active') {
+      this.router.navigate([userData.homePage || '/dashboard']);
+      return;
+    } else if (userData.stripePaymentSessionId && userData.paymentSucceededPendingActivation) {
       this.router.navigate(['/payment-success']);
+      return;
     }
+    // User exists but no active subscription — show pricing page
     this.showSignupFields = false;
     this.apiCallPending = false;
-    this.spinner.hide();
     this.cdRef.detectChanges();
   }
 
   private newUser(error: any, user: any): void {
-    // If 500 error, it's a new user - show signup fields
-    if (error?.status === 500) {
+    // 404 = user not found in S3 (new user); 500 = unexpected server error (also treat as new)
+    if (error?.status === 404 || error?.status === 500) {
       console.log('New user detected, showing signup fields');
       this.showSignupFields = true;
       // Pre-populate email and name from auth state
       this.userData.email = user.email || '';
       if (user.username) {
-        const nameParts = user.username.split(/[\s._-]+/);
+        const nameParts = (user.username as string).split(/[\s._-]+/);
         if (nameParts.length >= 2) {
           this.userData.firstName = nameParts[0];
           this.userData.lastName = nameParts.slice(1).join(' ');
@@ -135,7 +132,6 @@ export class CheckinComponent implements OnInit {
       }
     }
     this.apiCallPending = false;
-    this.spinner.hide();
     this.cdRef.detectChanges();
   }
 
@@ -172,11 +168,12 @@ export class CheckinComponent implements OnInit {
     * @param emitJSON JSON object containing priceId and userData
   */
   async startCheckout(emitJSON: any): Promise<void> {
-    emitJSON = JSON.parse(emitJSON);
-    this.saveUserData(emitJSON.userData);
+    // Accept both JSON string (from template $event) and plain object (from internal calls)
+    const parsed = typeof emitJSON === 'string' ? JSON.parse(emitJSON) : emitJSON;
+    await this.saveUserData(parsed.userData);
     try {
       const response = await new Promise<CheckoutSessionResponse>((resolve, reject) => {
-        this.stripeCheckoutService.createCheckoutSession(emitJSON.priceId, emitJSON.userData.userId, emitJSON.userData.email).subscribe({
+        this.stripeCheckoutService.createCheckoutSession(parsed.priceId, parsed.userData.userId, parsed.userData.email).subscribe({
           next: (result) => resolve(result),
           error: (err) => reject(err)
         });
