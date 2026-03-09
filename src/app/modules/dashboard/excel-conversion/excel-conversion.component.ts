@@ -1,15 +1,18 @@
-import { Component, DoCheck } from '@angular/core';
+import { Component, ViewChild, DoCheck } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { FetchXRApiService, ExcelConversionRatesPayload } from '../../../services/fetchXR-api.service';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CommonModule } from '@angular/common';
 import { ButtonBarComponent } from '../../../components/button-bar/button-bar.component';
 import { DataTableComponent } from '../../../components/data-table/data-table.component';
+import { ExcelReportComponent, GenericExcelWorkbook } from '../../../components/excel-report/excel-report.component';
 import { FormsModule } from '@angular/forms';
 
 declare const XLSX: any;
@@ -48,12 +51,15 @@ interface ColumnMapping {
   templateUrl: './excel-conversion.component.html',
   styleUrl: './excel-conversion.component.scss',
   imports: [
-    MatIconModule, MatExpansionModule, MatTableModule, MatSelectModule,
+    MatIconModule, MatButtonModule, MatTooltipModule,
+    MatExpansionModule, MatTableModule, MatSelectModule,
     MatCheckboxModule, MatFormFieldModule, CommonModule, FormsModule,
-    ButtonBarComponent, DataTableComponent
+    ButtonBarComponent, DataTableComponent, ExcelReportComponent
   ]
 })
 export class ExcelConversionComponent implements DoCheck {
+
+  @ViewChild('excelReport') excelReport!: ExcelReportComponent;
 
   uploadFilesLength = 0;
   convertedData: SheetData[] = [];
@@ -1043,6 +1049,16 @@ export class ExcelConversionComponent implements DoCheck {
         if (idx !== -1) amountColMap.set(idx, m);
       }
 
+      // Aggregate columns (Total, Grand Total, etc.) are suppressed during mapping.
+      // Collect their indices so we can recompute them after each row is converted.
+      const aggregateColIndices: number[] = [];
+      for (const m of mappings) {
+        if (m.type === 'none' && this.isAggregateColumn(m.columnName)) {
+          const idx = sheet.headers.indexOf(m.columnName);
+          if (idx !== -1) aggregateColIndices.push(idx);
+        }
+      }
+
       // Pre-resolve fixed rates for Type 2 (period columns) to avoid repeating per row
       const fixedRateByCol = new Map<number, number>();
       if (dateColIdx === -1) {
@@ -1089,11 +1105,40 @@ export class ExcelConversionComponent implements DoCheck {
           }
         }
 
+        // Recompute suppressed aggregate columns (Total / Grand Total / etc.) as the
+        // sum of all converted amount columns in this row.
+        // NOTE: must run before Phase 3 formatting so we can still read numeric values.
+        if (aggregateColIndices.length > 0 && amountColMap.size > 0) {
+          const convertedSum = Array.from(amountColMap.keys()).reduce((acc, colIdx) => {
+            const val = newRow[colIdx];
+            return acc + (typeof val === 'number' && !isNaN(val) ? val : 0);
+          }, 0);
+          for (const aggIdx of aggregateColIndices) {
+            newRow[aggIdx] = parseFloat(convertedSum.toFixed(2));
+          }
+        }
+
+        // Phase 3 — format all converted amount + aggregate columns as comma-separated
+        // values (equivalent to Angular CurrencyPipe without the symbol, e.g. 1,234.56)
+        for (const colIdx of amountColMap.keys()) {
+          const v = newRow[colIdx];
+          if (typeof v === 'number' && !isNaN(v)) newRow[colIdx] = this.formatAmount(v);
+        }
+        for (const aggIdx of aggregateColIndices) {
+          const v = newRow[aggIdx];
+          if (typeof v === 'number' && !isNaN(v)) newRow[aggIdx] = this.formatAmount(v);
+        }
+
         return newRow;
       });
 
       return { ...sheet, data: newData };
     });
+  }
+
+  /** Formats a number as a comma-separated decimal string (CurrencyPipe without symbol). e.g. 1234567.8 → "1,234,567.80" */
+  private formatAmount(value: number): string {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   /** Converts "Jan 2024" → "2024-01-31" (last day of month) for the API date format */
@@ -1152,6 +1197,32 @@ export class ExcelConversionComponent implements DoCheck {
 
   getCurrencyColumns(sheet: SheetData): ColumnMapping[] {
     return this.getColumnMappings(sheet).filter(m => m.type === 'amount' || m.columnName.toLowerCase().includes('total'));
+  }
+
+  /**
+   * Downloads the converted sheets as a styled .xlsx via ExcelReportComponent.
+   */
+  downloadConvertedExcel(): void {
+    if (!this.convertedSheets.length) return;
+
+    const workbookData: GenericExcelWorkbook = {};
+
+    for (const sheet of this.convertedSheets) {
+      workbookData[sheet.sheetName] = {
+        metadataHeader: sheet.metadata.map(row => row.map(cell => (cell == null ? '' : String(cell)))),
+        header: sheet.headers,
+        data: sheet.data.map(row => {
+          const obj: Record<string, any> = {};
+          sheet.headers.forEach((h, i) => { obj[h] = row[i] ?? null; });
+          return obj;
+        })
+      };
+    }
+
+    const fileName = `Converted_${new Date().toISOString().slice(0, 10)}`;
+    this.excelReport.workbookData = workbookData;
+    this.excelReport.reportName   = fileName;
+    this.excelReport.generateExcel();
   }
 
 }

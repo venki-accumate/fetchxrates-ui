@@ -250,6 +250,15 @@
                     </mat-panel-description>
                 </mat-expansion-panel-header>
 
+                <div class="actionIcons">
+                    <button mat-icon-button
+                            (click)="downloadConvertedExcel()"
+                            matTooltip="Download converted Excel"
+                            aria-label="Download Excel">
+                        <mat-icon>download</mat-icon>
+                    </button>
+                </div>
+
                 <div *ngFor="let sheet of convertedSheets" class="sheet-preview">
                     <div *ngIf="convertedSheets.length > 1" class="sheet-preview-title">
                         <mat-icon>grid_on</mat-icon>
@@ -267,3 +276,5 @@
     </div>
 </div>
 <app-button-bar (action)="handleAction($event)" [config]="buttonConfig"></app-button-bar>
+
+<app-excel-report #excelReport style="display:none"></app-excel-report>
