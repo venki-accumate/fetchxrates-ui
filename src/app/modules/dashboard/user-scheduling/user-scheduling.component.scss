@@ -342,29 +342,15 @@
 .toggle-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   height: 38px;
 }
 
-.toggle-label {
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  min-width: 28px;
+::ng-deep .mat-mdc-slide-toggle.mat-mdc-slide-toggle-checked:not(.mat-disabled) .mdc-switch__shadow {
+  background-color: var(--accent);
 }
 
-:host ::ng-deep .stats-toggle {
-  .mdc-switch__track {
-    background-color: var(--border) !important;
-  }
-
-  &.mdc-switch--selected .mdc-switch__track {
-    background-color: rgba(var(--accent-rgb), 0.5) !important;
-  }
-
-  &.mdc-switch--selected .mdc-switch__handle::after {
-    background-color: var(--accent) !important;
-  }
+::ng-deep .mat-mdc-slide-toggle.mat-mdc-slide-toggle-checked:not(.mat-disabled) .mdc-switch__track::after {
+  background-color: rgba(var(--accent-rgb), 0.5) !important;
 }
 
 // ─── Email recipients input ───────────────────────────────────────────────────

@@ -43,3 +43,16 @@
   margin-left: auto; /* Optional: pushes "Generate Report" button to the right */
 }
 /* End CSS for button */
+
+button:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn:disabled {
+  background-color: #e0e0e0;
+  color: #888;
+  border-color: #d0d0d0;
+}

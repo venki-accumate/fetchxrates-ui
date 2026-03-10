@@ -3,7 +3,7 @@
     <mat-accordion>
 
       <!-- ── Existing Schedules panel (shown only if user has scheduling) ───── -->
-      <mat-expansion-panel *ngIf="hasScheduling()" [expanded]="true" class="schedules-panel">
+      <mat-expansion-panel *ngIf="hasScheduling()" [expanded]="schedulesPanelOpen()" (opened)="schedulesPanelOpen.set(true)" (closed)="schedulesPanelOpen.set(false)" class="schedules-panel">
         <mat-expansion-panel-header>
           <mat-panel-title>
             <mat-icon class="panel-icon">event_repeat</mat-icon>
@@ -94,7 +94,7 @@
       </ngx-spinner>
 
       <!-- ── Create / Edit Schedule panel ──────────────────────────────────── -->
-      <mat-expansion-panel [expanded]="true" class="form-panel">
+      <mat-expansion-panel [expanded]="formPanelOpen()" (opened)="formPanelOpen.set(true)" (closed)="formPanelOpen.set(false)" class="form-panel">
         <mat-expansion-panel-header>
           <mat-panel-title>
             <mat-icon class="panel-icon">{{ isEditMode ? 'edit_calendar' : 'add_circle_outline' }}</mat-icon>
@@ -172,9 +172,7 @@
           <div class="filter-section" *ngIf="showStatisticsToggle">
             <span class="filter-label">Include Statistics</span>
             <div class="toggle-wrapper">
-              <mat-slide-toggle [(ngModel)]="showStatistics" class="stats-toggle">
-                <span class="toggle-label">{{ showStatistics ? 'Yes' : 'No' }}</span>
-              </mat-slide-toggle>
+              <mat-slide-toggle [(ngModel)]="showStatistics"></mat-slide-toggle>
             </div>
           </div>
 

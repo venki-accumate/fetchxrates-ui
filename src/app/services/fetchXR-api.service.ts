@@ -141,19 +141,28 @@ export class FetchXRApiService {
   }
 
   /**
-   * GET /schedules/:userId
+   * GET /scheduling-manager/schedules?userId=<userId>
    * Returns the list of saved schedules for a user.
    */
-  getSchedules(userId: string): Observable<UserSchedule[]> {
-    return this.http.get<UserSchedule[]>(`${this.apiUrl}/schedules/${userId}`);
+  getSchedules(email: string): Observable<UserSchedule[]> {
+    const params = new HttpParams().set('email', email);
+    return this.http.get<UserSchedule[]>(
+      `${this.apiUrl}/scheduling-manager/schedules`,
+      { params }
+    );
   }
 
   /**
-   * POST /schedules/:userId
+   * POST /scheduling-manager/schedules
+   * Body: { userId, schedules }
    * Persists the full list of schedules for a user (replaces existing).
+   * Side effects: updates user.json hasScheduling flag + DynamoDB upsert.
    */
-  saveSchedules(userId: string, schedules: UserSchedule[]): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/schedules/${userId}`, { schedules });
+  saveSchedules(email: string, schedules: UserSchedule[], updateUser: boolean): Observable<any> {
+    return this.http.post<any>(
+      `${this.apiUrl}/scheduling-manager/schedules`,
+      { email, schedules, updateUser }
+    );
   }
 
   /**

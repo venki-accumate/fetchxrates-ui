@@ -36,6 +36,7 @@
     "@aws-amplify/ui-angular": "^5.0.26",
     "aws-amplify": "^6.6.2",
     "exceljs": "^4.4.0",
+    "fflate": "^0.8.2",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "jwt-decode": "^4.0.0",

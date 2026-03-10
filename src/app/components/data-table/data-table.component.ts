@@ -26,7 +26,7 @@ import { MatButtonModule } from '@angular/material/button';
     MatButtonModule
   ]
 })
-export class DataTableComponent implements OnChanges, AfterViewInit, OnInit {
+export class DataTableComponent implements OnChanges, AfterViewInit {
   /** Column names — used as both display headers and object keys in dataSource rows */
   @Input() columnHeaders: string[] = [];
   /** Array of row objects; each key must match a value in columnHeaders */
@@ -47,11 +47,6 @@ export class DataTableComponent implements OnChanges, AfterViewInit, OnInit {
   editingValue: any = '';
   hasError = false;
 
-    ngOnInit(): void {
-        console.log(this.columnHeaders);
-        console.log(this.dataSource);
-    }
-
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['columnHeaders']) {
       this.displayedColumns = [...(this.columnHeaders || [])];
@@ -60,7 +55,6 @@ export class DataTableComponent implements OnChanges, AfterViewInit, OnInit {
       this.matDataSource.data = this.dataSource || [];
     }
     if (changes['disablePagination'] && this.paginator) {
-      this.matDataSource.data = this.dataSource || [];
       this.matDataSource.paginator = this.disablePagination ? null : this.paginator;
     }
   }

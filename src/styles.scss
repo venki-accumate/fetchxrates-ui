@@ -163,14 +163,26 @@ mat-icon {
 }
 
 /* ── Snackbar theme ──────────────────────────────────────────────────────── */
+.mat-mdc-snack-bar-container {
+  margin-bottom: 72px;
+}
+
 .mat-mdc-snack-bar-container.snackbar-success {
-  --mat-snackbar-container-color: #22b71b;
-  --mat-snackbar-supporting-text-color: #ffffff;
-  --mat-snackbar-supporting-text-weight: 600;
+  --mat-snackbar-container-color:         #22b71b;
+  --mdc-snackbar-container-color:         #22b71b;
+  background-color:                        #22b71b !important;
+  --mat-snackbar-supporting-text-color:   #ffffff;
+  --mdc-snackbar-supporting-text-color:   #ffffff;
+  --mat-snackbar-supporting-text-weight:  600;
+  --mat-snack-bar-button-color:           #ffffff;
 }
 
 .mat-mdc-snack-bar-container.snackbar-error {
-  --mat-snackbar-container-color: #ef4444;
-  --mat-snackbar-supporting-text-color: #ffffff;
-  --mat-snackbar-supporting-text-weight: 600;
+  --mat-snackbar-container-color:         #ef4444;
+  --mdc-snackbar-container-color:         #ef4444;
+  background-color:                        #ef4444 !important;
+  --mat-snackbar-supporting-text-color:   #ffffff;
+  --mdc-snackbar-supporting-text-color:   #ffffff;
+  --mat-snackbar-supporting-text-weight:  600;
+  --mat-snack-bar-button-color:           #ffffff;
 }

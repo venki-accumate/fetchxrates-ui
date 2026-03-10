@@ -124,6 +124,97 @@
   font-weight: 600;
 }
 
+.sheet-title-no-amount {
+  color: #ef4444 !important;
+}
+
+// Inner sheet expansion panels (multi-sheet view)
+::ng-deep .sheet-inner-panel {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  margin-top: 1rem !important;
+
+  &:first-child { margin-top: 0 !important; }
+
+  .mat-expansion-panel-header {
+    background: var(--bg-secondary) !important;
+    border-radius: 8px !important;
+    min-height: 44px;
+
+    &:hover { background: var(--bg-card) !important; }
+  }
+
+  .mat-expansion-panel-header-title {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .mat-expansion-panel-header-description {
+    color: var(--text-muted) !important;
+    font-size: 0.8rem;
+  }
+
+  .mat-expansion-indicator::after {
+    color: var(--accent) !important;
+  }
+
+  .mat-expansion-panel-body {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+}
+
+// No-amount notice banner
+.no-amount-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 1rem;
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #ef4444;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+    color: #ef4444;
+  }
+}
+
+// Badge shown in multi-sheet panel title for no-amount sheets
+.no-amount-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  margin-left: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+// Global confirm checkbox — sits below all sheet panels
+.global-confirm {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+}
+
 // Data preview panel: multi-sheet label
 .sheet-preview {
   & + .sheet-preview {
