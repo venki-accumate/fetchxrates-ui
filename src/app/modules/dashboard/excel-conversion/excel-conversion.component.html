@@ -145,14 +145,14 @@
                                                             [ngModel]="m.fromCurrency"
                                                             (ngModelChange)="onCurrencyChange(sheet, m, 'from', $event)">
                                                         <option value="" disabled>From</option>
-                                                        <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+                                                        <option *ngFor="let c of currencyService.codes()" [value]="c">{{ currencyService.label(c) }}</option>
                                                     </select>
                                                     <mat-icon class="arrow-icon">arrow_forward</mat-icon>
                                                     <select class="map-select currency-select"
                                                             [ngModel]="m.toCurrency"
                                                             (ngModelChange)="onCurrencyChange(sheet, m, 'to', $event)">
                                                         <option value="" disabled>To</option>
-                                                        <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+                                                        <option *ngFor="let c of currencyService.codes()" [value]="c">{{ currencyService.label(c) }}</option>
                                                     </select>
                                                 </div>
                                                 <select *ngIf="m.type === 'date'" class="map-select date-select"

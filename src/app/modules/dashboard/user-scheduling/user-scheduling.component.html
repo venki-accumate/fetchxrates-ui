@@ -107,20 +107,11 @@
 
         <div class="filter-form">
 
-          <!-- Frequency -->
-          <div class="filter-section">
-            <span class="filter-label">Frequency</span>
-            <select class="map-select" [(ngModel)]="frequency" (ngModelChange)="validationError.set('')">
-              <option *ngFor="let f of FREQUENCIES" [value]="f.value">{{ f.label }}</option>
-            </select>
-          </div>
-
-          <!-- From Currency -->
           <div class="filter-section">
             <span class="filter-label">From Currency</span>
             <select class="map-select" [(ngModel)]="fromCurrency" (ngModelChange)="validationError.set('')">
               <option value="" disabled>Select currency</option>
-              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+              <option *ngFor="let c of currencies | keyvalue" [value]="c.key">{{ c.value }}</option>
             </select>
           </div>
 
@@ -137,7 +128,7 @@
                   <option
                     *ngFor="let c of availableToCurrencies"
                     [style.display]="c === fromCurrency ? 'none' : ''"
-                    [value]="c">{{ c }}</option>
+                    [value]="c">{{ currencies[c] }}</option>
                 </select>
               </div>
               <div class="listbox-arrows">
@@ -154,11 +145,22 @@
                   <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
                 </label>
                 <select #selectedSelect multiple class="listbox-select">
-                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ currencies[c] }}</option>
                 </select>
               </div>
             </div>
           </div>
+          
+          <!-- Column 3: Frequency + Delivery + Statistics + Recipients stacked -->
+          <div class="filter-column">
+
+            <!-- Frequency -->
+            <div class="filter-section">
+              <span class="filter-label">Frequency</span>
+              <select class="map-select" [(ngModel)]="frequency" (ngModelChange)="validationError.set('')">
+                <option *ngFor="let f of FREQUENCIES" [value]="f.value">{{ f.label }}</option>
+              </select>
+            </div>
 
           <!-- Delivery Format -->
           <div class="filter-section">
@@ -189,6 +191,8 @@
               placeholder="email1@example.com, email2@example.com"
               (ngModelChange)="validationError.set('')">
             <span class="hint-text recipients-note">Your account email is always included.</span>
+          </div>
+
           </div>
 
         </div>

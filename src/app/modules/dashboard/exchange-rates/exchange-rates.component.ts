@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +12,7 @@ import { CsvReportComponent, GenericCsvWorkbook } from '../../../components/csv-
 import { PdfReportComponent, GenericPdfWorkbook } from '../../../components/pdf-report/pdf-report.component';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 import { FetchXRApiService, RatesRangePayload } from '../../../services/fetchXR-api.service';
+import { CurrencyService } from '../../../services/currency.service';
 
 @Component({
   selector: 'app-exchange-rates',
@@ -33,20 +34,24 @@ import { FetchXRApiService, RatesRangePayload } from '../../../services/fetchXR-
     PdfReportComponent
   ]
 })
-export class ExchangeRatesComponent {
+export class ExchangeRatesComponent implements OnInit {
   constructor(
     private fetchXRApiService: FetchXRApiService,
-    private spinner: NgxSpinnerService
+    private spinner: NgxSpinnerService,
+    readonly currencyService: CurrencyService
   ) {}
 
-  readonly COMMON_CURRENCIES = [
-    'AUD', 'BRL', 'CAD', 'CHF', 'CNY', 'EUR', 'GBP', 'HKD', 'IDR', 'INR',
-    'JPY', 'KRW', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'RUB', 'SAR',
-    'SEK', 'SGD', 'THB', 'TRY', 'TWD', 'USD', 'ZAR'
-  ];
+  ngOnInit(): void {
+    this.currencyService.load().then(() => {
+      this.availableToCurrencies = [...this.currencyService.codes()];
+      this.currencies = Object.fromEntries(
+                this.currencyService.codes().map(c => [c, this.currencyService.label(c)])
+            );
+    });
+  }
 
   fromCurrency = '';
-  availableToCurrencies = [...this.COMMON_CURRENCIES];
+  availableToCurrencies: string[] = [];
   selectedToCurrencies: string[] = [];
 
   @ViewChild('availableSelect') availableSelectRef!: ElementRef<HTMLSelectElement>;
@@ -83,6 +88,8 @@ export class ExchangeRatesComponent {
     left: { label: 'Reset' },
     right: { label: 'Fetch Rates', disabled: false }
   };
+
+  currencies: Record<string, string> = {};
 
   get maxDate(): string {
     const d = new Date();
@@ -219,7 +226,7 @@ export class ExchangeRatesComponent {
 
   reset(): void {
     this.fromCurrency = '';
-    this.availableToCurrencies = [...this.COMMON_CURRENCIES];
+    this.availableToCurrencies = [...this.currencyService.codes()];
     this.selectedToCurrencies = [];
     this.startDate = '';
     this.endDate = '';

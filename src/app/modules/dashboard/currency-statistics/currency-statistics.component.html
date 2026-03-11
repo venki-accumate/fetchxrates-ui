@@ -15,15 +15,67 @@
         </mat-expansion-panel-header>
 
         <div class="filter-form">
-
-          <!-- Period Type toggle -->
+          <!-- From Currency -->
           <div class="filter-section">
-            <span class="filter-label">Period Type</span>
-            <div class="toggle-group">
-              <button class="toggle-btn" [class.active]="periodType() === 'monthly'" (click)="setPeriodType('monthly')">Monthly</button>
-              <button class="toggle-btn" [class.active]="periodType() === 'yearly'"  (click)="setPeriodType('yearly')">Yearly</button>
+            <span class="filter-label">From Currency</span>
+            <select
+              class="map-select"
+              [(ngModel)]="fromCurrency"
+              (ngModelChange)="validationError.set('')">
+              <option value="" disabled>Select currency</option>
+              <option *ngFor="let c of currencies | keyvalue" [value]="c.key">{{ c.value }}</option>
+            </select>
+          </div>
+
+          <!-- To Currencies dual listbox -->
+          <div class="filter-section">
+            <span class="filter-label">
+              To Currencies
+              <span class="hint-text">&nbsp;· leave empty for all</span>
+            </span>
+            <div class="dual-listbox">
+              <div class="listbox">
+                <label class="listbox-label">Available</label>
+                <select #availableSelect multiple class="listbox-select">
+                  <option
+                    *ngFor="let c of availableToCurrencies"
+                    [style.display]="c === fromCurrency ? 'none' : ''"
+                    [value]="c">{{ currencies[c] }}</option>
+                </select>
+              </div>
+
+              <div class="listbox-arrows">
+                <button type="button" class="arrow-btn" title="Add selected" (click)="moveRight()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <button type="button" class="arrow-btn" title="Remove selected" (click)="moveLeft()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+
+              <div class="listbox">
+                <label class="listbox-label">
+                  Selected
+                  <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
+                </label>
+                <select #selectedSelect multiple class="listbox-select">
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ currencies[c] }}</option>
+                </select>
+              </div>
             </div>
           </div>
+
+          <!-- Column 3: Period Type + Period Range stacked -->
+          <div class="filter-column">
+
+            <!-- Period Type toggle -->
+            <div class="filter-section">
+              <span class="filter-label">Period Type</span>
+              <div class="toggle-group">
+                <button class="toggle-btn" [class.active]="periodType() === 'monthly'" (click)="setPeriodType('monthly')">Monthly</button>
+                <button class="toggle-btn" [class.active]="periodType() === 'yearly'"  (click)="setPeriodType('yearly')">Yearly</button>
+              </div>
+            </div>
 
           <!-- Period Range -->
           <div class="filter-section">
@@ -76,56 +128,7 @@
             </div>
           </div>
 
-          <!-- From Currency -->
-          <div class="filter-section">
-            <span class="filter-label">From Currency</span>
-            <select
-              class="map-select"
-              [(ngModel)]="fromCurrency"
-              (ngModelChange)="validationError.set('')">
-              <option value="" disabled>Select currency</option>
-              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
-            </select>
           </div>
-
-          <!-- To Currencies dual listbox -->
-          <div class="filter-section">
-            <span class="filter-label">
-              To Currencies
-              <span class="hint-text">&nbsp;· leave empty for all</span>
-            </span>
-            <div class="dual-listbox">
-              <div class="listbox">
-                <label class="listbox-label">Available</label>
-                <select #availableSelect multiple class="listbox-select">
-                  <option
-                    *ngFor="let c of availableToCurrencies"
-                    [style.display]="c === fromCurrency ? 'none' : ''"
-                    [value]="c">{{ c }}</option>
-                </select>
-              </div>
-
-              <div class="listbox-arrows">
-                <button type="button" class="arrow-btn" title="Add selected" (click)="moveRight()">
-                  <mat-icon>chevron_right</mat-icon>
-                </button>
-                <button type="button" class="arrow-btn" title="Remove selected" (click)="moveLeft()">
-                  <mat-icon>chevron_left</mat-icon>
-                </button>
-              </div>
-
-              <div class="listbox">
-                <label class="listbox-label">
-                  Selected
-                  <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
-                </label>
-                <select #selectedSelect multiple class="listbox-select">
-                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
         </div>
 
         <div *ngIf="validationError()" class="error-banner">

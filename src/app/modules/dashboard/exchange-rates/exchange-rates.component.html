@@ -20,7 +20,7 @@
               [(ngModel)]="fromCurrency"
               (ngModelChange)="validationError.set('')">
               <option value="" disabled>Select currency</option>
-              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+              <option *ngFor="let c of currencies | keyvalue" [value]="c.key">{{ c.value }}</option>
             </select>
           </div>
 
@@ -34,7 +34,7 @@
               <div class="listbox">
                 <label class="listbox-label">Available</label>
                 <select #availableSelect multiple class="listbox-select">
-                  <option *ngFor="let c of availableToCurrencies" [style.display]="c===fromCurrency ? 'none' : ''" [value]="c">{{ c }}</option>
+                  <option *ngFor="let c of availableToCurrencies" [style.display]="c===fromCurrency ? 'none' : ''" [value]="c">{{ currencies[c] }}</option>
                 </select>
               </div>
 
@@ -53,7 +53,7 @@
                   <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
                 </label>
                 <select #selectedSelect multiple class="listbox-select">
-                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ currencies[c] }}</option>
                 </select>
               </div>
             </div>

@@ -16,6 +16,7 @@ import { FetchXRApiService, UserSchedule } from '../../../services/fetchXR-api.s
 import { UserServiceService } from '../../../services/user-service.service';
 import { AuthStateService } from '../../../services/auth-state.service';
 import { EventBusService } from '../../../services/event-bus.service';
+import { CurrencyService } from '../../../services/currency.service';
 
 @Component({
   selector: 'app-user-scheduling',
@@ -41,14 +42,9 @@ export class UserSchedulingComponent implements OnInit {
     private userService: UserServiceService,
     private authState: AuthStateService,
     private eventBus: EventBusService,
-    private spinner: NgxSpinnerService
+    private spinner: NgxSpinnerService,
+    readonly currencyService: CurrencyService
   ) {}
-
-  readonly COMMON_CURRENCIES = [
-    'AUD', 'BRL', 'CAD', 'CHF', 'CNY', 'EUR', 'GBP', 'HKD', 'IDR', 'INR',
-    'JPY', 'KRW', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'RUB', 'SAR',
-    'SEK', 'SGD', 'THB', 'TRY', 'TWD', 'USD', 'ZAR'
-  ];
 
   readonly FREQUENCIES = [
     { value: 'daily',   label: 'Daily'   },
@@ -71,7 +67,7 @@ export class UserSchedulingComponent implements OnInit {
   // ── Form state ────────────────────────────────────────────────────────────
   frequency: 'daily' | 'weekly' | 'monthly' = 'daily';
   fromCurrency = '';
-  availableToCurrencies = [...this.COMMON_CURRENCIES];
+  availableToCurrencies: string[] = [];
   selectedToCurrencies: string[] = [];
   deliveryFormat: 'excel' | 'csv' | 'pdf' | 'email_table' = 'excel';
   showStatistics = false;
@@ -90,6 +86,8 @@ export class UserSchedulingComponent implements OnInit {
   schedulesPanelOpen = signal(true);
   isLoading = false;
 
+  currencies: Record<string, string> = {};
+
   scheduleTableSource = new MatTableDataSource<UserSchedule>([]);
 
   buttonConfig = {
@@ -99,6 +97,12 @@ export class UserSchedulingComponent implements OnInit {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
+    this.currencyService.load().then(() => {
+      this.availableToCurrencies = [...this.currencyService.codes()];
+      this.currencies = Object.fromEntries(
+        this.currencyService.codes().map(c => [c, this.currencyService.label(c)])
+      );
+    });
     const userData     = this.authState.getUserData();
     const hasSchedules = userData?.hasScheduling === true
       || this.userService.userObject?.hasScheduling === true;
@@ -241,7 +245,7 @@ export class UserSchedulingComponent implements OnInit {
     this.frequency           = schedule.frequency;
     this.fromCurrency        = schedule.fromCurrency;
     this.selectedToCurrencies  = [...schedule.toCurrencies];
-    this.availableToCurrencies = this.COMMON_CURRENCIES.filter(c => !schedule.toCurrencies.includes(c));
+    this.availableToCurrencies = this.currencyService.codes().filter(c => !schedule.toCurrencies.includes(c));
     this.deliveryFormat      = schedule.deliveryFormat;
     this.showStatistics      = schedule.showStatistics;
     this.emailRecipientsInput = schedule.additionalRecipients.join(', ');
@@ -316,7 +320,7 @@ export class UserSchedulingComponent implements OnInit {
   private resetForm(): void {
     this.frequency           = 'daily';
     this.fromCurrency        = '';
-    this.availableToCurrencies = [...this.COMMON_CURRENCIES];
+    this.availableToCurrencies = [...this.currencyService.codes()];
     this.selectedToCurrencies  = [];
     this.deliveryFormat      = 'excel';
     this.showStatistics      = false;

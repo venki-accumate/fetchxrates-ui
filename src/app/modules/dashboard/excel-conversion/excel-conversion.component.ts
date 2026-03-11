@@ -2,6 +2,7 @@ import { Component, ViewChild, DoCheck, OnInit, OnDestroy, NgZone } from '@angul
 import { forkJoin } from 'rxjs';
 import { FetchXRApiService, ExcelConversionRatesPayload } from '../../../services/fetchXR-api.service';
 import { PageHelpService } from '../../../services/page-help.service';
+import { CurrencyService } from '../../../services/currency.service';
 import helpContent from './excel-conversion.help.json';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -106,7 +107,8 @@ export class ExcelConversionComponent implements DoCheck, OnInit, OnDestroy {
   constructor(
     private fetchXRApiService: FetchXRApiService,
     private ngZone: NgZone,
-    private pageHelpService: PageHelpService
+    private pageHelpService: PageHelpService,
+    readonly currencyService: CurrencyService
   ) {}
 
   ngOnInit(): void {
@@ -143,12 +145,6 @@ export class ExcelConversionComponent implements DoCheck, OnInit, OnDestroy {
   allMappingsConfirmed = false;
   /** Memoised month-year periods extracted from sheet headers and metadata */
   private periodsCache: Record<string, string[]> = {};
-
-  readonly COMMON_CURRENCIES = [
-    'AUD','BRL','CAD','CHF','CNY','EUR','GBP','HKD','IDR','INR',
-    'JPY','KRW','MXN','MYR','NOK','NZD','PHP','PLN','RUB','SAR',
-    'SEK','SGD','THB','TRY','TWD','USD','ZAR'
-  ];
 
   readonly MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   readonly TODAY  = new Date();

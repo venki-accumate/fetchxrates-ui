@@ -1,4 +1,4 @@
-import { Component, ElementRef, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, ElementRef, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,6 +6,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 
 import { FetchXRApiService, RatesRangePayload } from '../../../services/fetchXR-api.service';
+import { CurrencyService } from '../../../services/currency.service';
 import { ButtonBarComponent, ActionBarConfig } from '../../../components/button-bar/button-bar.component';
 import { LineRaceComponent } from '../../../components/charts/line-race/line-race.component';
 import { ComparisonBarComponent } from '../../../components/charts/comparison-bar/comparison-bar.component';
@@ -26,28 +27,31 @@ import { ComparisonBarComponent } from '../../../components/charts/comparison-ba
     ComparisonBarComponent
   ]
 })
-export class RateChartsComponent {
+export class RateChartsComponent implements OnInit {
 
   constructor(
     private apiService: FetchXRApiService,
-    private spinner: NgxSpinnerService
+    private spinner: NgxSpinnerService,
+    readonly currencyService: CurrencyService
   ) {}
 
+  ngOnInit(): void {
+    this.currencyService.load().then(() => {
+      this.availableToCurrencies = [...this.currencyService.codes()];
+      this.currencies = Object.fromEntries(
+        this.currencyService.codes().map(c => [c, this.currencyService.label(c)])
+      );
+    });
+  }
+
   // ─── Constants ──────────────────────────────────────────────────────────────
-
-  readonly COMMON_CURRENCIES = [
-    'AUD', 'BRL', 'CAD', 'CHF', 'CNY', 'EUR', 'GBP', 'HKD', 'IDR', 'INR',
-    'JPY', 'KRW', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'RUB', 'SAR',
-    'SEK', 'SGD', 'THB', 'TRY', 'TWD', 'USD', 'ZAR'
-  ];
-
-  // ─── Filter state ────────────────────────────────────────────────────────────
 
   fromCurrency = '';
   startDate = '';
   endDate = '';
-  availableToCurrencies = [...this.COMMON_CURRENCIES];
+  availableToCurrencies: string[] = [];
   selectedToCurrencies: string[] = [];
+  currencies: Record<string, string> = {};
 
   @ViewChild('availableSelect') availableSelectRef!: ElementRef<HTMLSelectElement>;
   @ViewChild('selectedSelect')  selectedSelectRef!: ElementRef<HTMLSelectElement>;
@@ -254,7 +258,7 @@ export class RateChartsComponent {
     this.fromCurrency           = '';
     this.startDate              = '';
     this.endDate                = '';
-    this.availableToCurrencies  = [...this.COMMON_CURRENCIES];
+    this.availableToCurrencies  = [...this.currencyService.codes()];
     this.selectedToCurrencies   = [];
     this.loadedCurrencies       = [];
     this.loadedFrom             = '';
