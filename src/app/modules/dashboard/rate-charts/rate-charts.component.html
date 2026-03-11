@@ -1,0 +1,164 @@
+<div class="row">
+  <div class="col-12">
+    <mat-accordion>
+
+      <!-- ── Filter panel ─────────────────────────────────────────────────── -->
+      <mat-expansion-panel [expanded]="true" class="filters-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">show_chart</mat-icon>
+            Rate Charts
+          </mat-panel-title>
+          <mat-panel-description>
+            Select currencies and a time period, then click Load Charts to visualise trends
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="filter-form">
+
+          <!-- From currency -->
+          <div class="filter-section">
+            <span class="filter-label">From Currency</span>
+            <select
+              class="map-select"
+              [(ngModel)]="fromCurrency"
+              (ngModelChange)="validationError.set('')">
+              <option value="" disabled>Select currency</option>
+              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+            </select>
+          </div>
+
+          <!-- To currencies — dual listbox (max 8) -->
+          <div class="filter-section">
+            <span class="filter-label">
+              To Currencies
+              <span class="hint-text">&nbsp;· max 8 for clarity</span>
+            </span>
+
+            <div class="dual-listbox">
+              <div class="listbox">
+                <label class="listbox-label">Available</label>
+                <select #availableSelect multiple class="listbox-select">
+                  <option
+                    *ngFor="let c of availableToCurrencies"
+                    [style.display]="c === fromCurrency ? 'none' : ''"
+                    [value]="c">{{ c }}</option>
+                </select>
+              </div>
+
+              <div class="listbox-arrows">
+                <button type="button" class="arrow-btn" title="Add selected" (click)="moveRight()">
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <button type="button" class="arrow-btn" title="Remove selected" (click)="moveLeft()">
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+
+              <div class="listbox">
+                <label class="listbox-label">Selected</label>
+                <select #selectedSelect multiple class="listbox-select">
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date range -->
+          <div class="filter-section">
+            <span class="filter-label">
+              Date Range
+              <span class="hint-text">&nbsp;· no today or future dates · max 5 years</span>
+            </span>
+
+            <div class="date-range">
+              <input
+                type="date"
+                class="date-input"
+                [(ngModel)]="startDate"
+                [max]="maxDate"
+                (ngModelChange)="onStartDateChange()">
+
+              <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+
+              <input
+                type="date"
+                class="date-input"
+                [(ngModel)]="endDate"
+                [min]="startDate"
+                [max]="maxEndDate"
+                [disabled]="!startDate"
+                (ngModelChange)="validationError.set('')">
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Error banner -->
+        <div *ngIf="validationError()" class="error-banner">
+          <mat-icon>error_outline</mat-icon>
+          {{ validationError() }}
+        </div>
+
+      </mat-expansion-panel>
+
+      <!-- ── Spinner ──────────────────────────────────────────────────────── -->
+      <ngx-spinner
+        bdColor="rgba(0, 0, 0, 0.8)"
+        size="medium"
+        color="#22b71b"
+        type="line-scale"
+        [fullScreen]="true">
+        <p style="color: white">Loading charts…</p>
+      </ngx-spinner>
+
+      <!-- ── Chart results ─────────────────────────────────────────────────── -->
+      <mat-expansion-panel
+        *ngIf="hasLoaded()"
+        [expanded]="true"
+        class="results-panel">
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon class="panel-icon">show_chart</mat-icon>
+            {{ resultTitle }}
+          </mat-panel-title>
+          <mat-panel-description>{{ resultSummary }}</mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <!-- Line-race chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <mat-icon class="chart-icon">timeline</mat-icon>
+            <span>Exchange Rate Trends</span>
+          </div>
+          <app-line-race
+            [source]="lineRaceSource()"
+            [currencies]="loadedCurrencies"
+            [fromCurrency]="loadedFrom"
+            [height]="440">
+          </app-line-race>
+        </div>
+
+        <!-- Comparison bar chart -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <mat-icon class="chart-icon">stacked_bar_chart</mat-icon>
+            <span>Monthly Comparison</span>
+          </div>
+          <app-comparison-bar
+            [dataSet]="comparisonData()"
+            [fromCurrency]="loadedFrom"
+            [height]="440">
+          </app-comparison-bar>
+        </div>
+
+      </mat-expansion-panel>
+
+    </mat-accordion>
+  </div>
+</div>
+
+<app-button-bar
+  [config]="buttonConfig"
+  (action)="handleAction($event)">
+</app-button-bar>

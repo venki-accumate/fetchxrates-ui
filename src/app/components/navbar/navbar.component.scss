@@ -89,6 +89,32 @@
   gap: 1rem;
 }
 
+.help-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+
+  &:hover {
+    background-color: var(--card-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
 .theme-toggle {
   display: flex;
   align-items: center;
@@ -151,10 +177,10 @@
     border: 1px solid var(--border);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px var(--shadow);
-    min-width: 160px;
+    min-width: 200px;
     overflow: hidden;
     animation: slideDown 0.2s ease;
-    
+
     button {
       display: flex;
       align-items: center;
@@ -169,17 +195,30 @@
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: inherit;
-      
+
       mat-icon {
         font-size: 20px;
         width: 20px;
         height: 20px;
       }
-      
+
       &:hover {
-        background-color: #ef4444;
-        color: white;
+        background-color: var(--card-hover);
+        color: var(--accent);
       }
+
+      &:last-of-type {
+        &:hover {
+          background-color: #ef4444;
+          color: white;
+        }
+      }
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.25rem 0;
     }
   }
 }

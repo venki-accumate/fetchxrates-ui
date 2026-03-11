@@ -1,6 +1,8 @@
-import { Component, ViewChild, DoCheck, NgZone } from '@angular/core';
+import { Component, ViewChild, DoCheck, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { FetchXRApiService, ExcelConversionRatesPayload } from '../../../services/fetchXR-api.service';
+import { PageHelpService } from '../../../services/page-help.service';
+import helpContent from './excel-conversion.help.json';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -63,7 +65,7 @@ interface ColumnMapping {
     ButtonBarComponent, DataTableComponent, ExcelReportComponent
   ]
 })
-export class ExcelConversionComponent implements DoCheck {
+export class ExcelConversionComponent implements DoCheck, OnInit, OnDestroy {
 
   @ViewChild('excelReport') excelReport!: ExcelReportComponent;
 
@@ -103,8 +105,17 @@ export class ExcelConversionComponent implements DoCheck {
 
   constructor(
     private fetchXRApiService: FetchXRApiService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private pageHelpService: PageHelpService
   ) {}
+
+  ngOnInit(): void {
+    this.pageHelpService.registerHelp(helpContent as any);
+  }
+
+  ngOnDestroy(): void {
+    this.pageHelpService.clearHelp();
+  }
 
   ngDoCheck(): void {
     const next = this.computeCanConvert();

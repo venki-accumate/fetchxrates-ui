@@ -1,0 +1,57 @@
+// Feedback-specific styles — base .um-* classes are in styles.scss
+
+// Star rating
+.star-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.15rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: transform 0.15s;
+
+  &:hover {
+    transform: scale(1.15);
+  }
+
+  mat-icon {
+    font-size: 1.6rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: block;
+  }
+
+  &.star-active mat-icon {
+    color: #f59e0b; // amber
+  }
+
+  &.star-inactive mat-icon {
+    color: var(--border);
+  }
+}
+
+.rating-label {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.char-count {
+  float: right;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.field-hint {
+  font-size: 0.78rem;
+  color: #f59e0b;
+  margin-top: 0.1rem;
+}

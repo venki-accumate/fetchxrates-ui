@@ -3,12 +3,15 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { signOut, fetchAuthSession } from '@aws-amplify/auth';
+import { PageHelpService } from '../../services/page-help.service';
+import { PageHelpDialogComponent } from '../page-help/page-help-dialog.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatIconModule, MatDialogModule],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss']
 })
@@ -25,12 +28,32 @@ export class NavbarComponent implements OnInit {
     { label: 'Upload & Convert', icon: 'dashboard', route: '/dashboard/conversion' },
     { label: 'Fetch Rates', icon: 'api', route: '/dashboard/rates' },
     { label: 'Statistics', icon: 'analytics', route: '/dashboard/statistics' },
-    { label: 'Charts', icon: 'category', route: '/dashboard/charts' },
     { label: 'Scheduling', icon: 'schedule', route: '/dashboard/schedule' },
     { label: 'Usage', icon: 'bar_chart', route: '/dashboard/usage' }
   ];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private dialog: MatDialog,
+    public pageHelpService: PageHelpService
+  ) {}
+
+  navigateTo(path: string): void {
+    this.showUserMenu.set(false);
+    this.router.navigate([path]);
+  }
+
+  openHelp(): void {
+    const content = this.pageHelpService.content();
+    if (!content) return;
+    this.dialog.open(PageHelpDialogComponent, {
+      data: content,
+      panelClass: 'help-dialog-panel',
+      maxWidth: '720px',
+      width: '95vw',
+      autoFocus: false
+    });
+  }
 
   async ngOnInit() {
     // Check theme from localStorage

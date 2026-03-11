@@ -186,3 +186,308 @@ mat-icon {
   --mat-snackbar-supporting-text-weight:  600;
   --mat-snack-bar-button-color:           #ffffff;
 }
+// Help dialog panel override — ensures transparent container so component styles control background
+.help-dialog-panel .mat-mdc-dialog-container {
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.help-dialog-panel .mat-mdc-dialog-surface {
+  background-color: var(--bg-card) !important;
+  border-radius: 0.75rem !important;
+  padding: 0 !important;
+}
+
+// ============================================================
+// User Management Module — Shared Page Styles
+// ============================================================
+
+.um-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.um-page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.um-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(34, 183, 27, 0.06);
+  }
+
+  mat-icon { font-size: 20px; width: 20px; height: 20px; }
+}
+
+.um-page-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.um-page-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+  color: var(--accent);
+  flex-shrink: 0;
+
+  &.warn { color: #f59e0b; }
+}
+
+.um-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.um-page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0.2rem 0 0;
+}
+
+.um-page-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.um-page-body-narrow {
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.um-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px var(--shadow);
+}
+
+.um-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+
+  mat-icon { color: var(--accent); font-size: 20px; width: 20px; height: 20px; }
+  h3 { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin: 0; }
+}
+
+.um-card-sub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1.25rem;
+}
+
+.um-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  &.um-btn-accent {
+    background: var(--accent);
+    color: #fff;
+    &:hover:not(:disabled) { background: var(--accent-hover, #1da016); }
+  }
+
+  &.um-btn-secondary {
+    background: var(--accent-secondary, #3b82f6);
+    color: #fff;
+    &:hover:not(:disabled) { background: #2563eb; }
+  }
+
+  &.um-btn-danger {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    &:hover:not(:disabled) { background: #ef4444; color: #fff; }
+  }
+
+  &.um-btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    &:hover:not(:disabled) { background: var(--card-hover); color: var(--text-primary); }
+  }
+}
+
+.um-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: um-spin 0.7s linear infinite;
+}
+
+@keyframes um-spin {
+  to { transform: rotate(360deg); }
+}
+
+.um-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.um-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 4rem 1rem;
+  color: var(--text-muted);
+
+  mat-icon {
+    font-size: 3.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.4;
+  }
+  h4 { font-size: 1.1rem; font-weight: 600; color: var(--text-secondary); margin: 0 0 0.5rem; }
+  p  { font-size: 0.9rem; max-width: 380px; margin: 0; }
+}
+
+.um-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  gap: 0.75rem;
+
+  .success-icon-wrap {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    background: rgba(34, 183, 27, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+
+    mat-icon { font-size: 2.5rem; width: 2.5rem; height: 2.5rem; color: var(--accent); }
+
+    &.secondary {
+      background: rgba(59, 130, 246, 0.12);
+      mat-icon { color: var(--accent-secondary, #3b82f6); }
+    }
+  }
+
+  h3 { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+  p  { font-size: 0.9rem; color: var(--text-muted); max-width: 420px; margin: 0; }
+}
+
+.um-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.um-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.um-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .required-mark { color: #ef4444; }
+    .optional-mark { font-weight: 400; color: var(--text-muted); font-size: 0.8rem; }
+    .char-count    { font-size: 0.75rem; font-weight: 400; color: var(--text-muted); }
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 0.6rem 0.875rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.45rem;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(34, 183, 27, 0.12);
+    }
+  }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  .field-hint { font-size: 0.78rem; color: var(--text-muted); }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}

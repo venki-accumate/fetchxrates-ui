@@ -1,0 +1,70 @@
+{
+  "title": "Upload & Convert — How to use",
+  "subtitle": "Convert amount columns across multiple sheets from one currency to another using historical or monthly exchange rates.",
+  "sections": [
+    {
+      "icon": "upload_file",
+      "title": "Step 1 — Upload your file",
+      "color": "accent",
+      "items": [
+        "Click the upload area or drag-and-drop an Excel (.xlsx / .xls) or CSV file onto it.",
+        "Files with multiple sheets are fully supported — each sheet is processed independently.",
+        "Sheets that contain no numeric amount columns are flagged automatically and skipped during conversion."
+      ]
+    },
+    {
+      "icon": "table_rows",
+      "title": "Step 2 — Confirm the header row",
+      "color": "accent",
+      "items": [
+        "The app automatically detects which row contains column names. Review the detected header row and its column chips.",
+        "If the header is wrong, click 'Incorrect' and pick the correct row from the candidate list — up to 4 data rows are shown so you can select further down the sheet.",
+        "Once you click 'Correct', the column mapping panel opens automatically."
+      ]
+    },
+    {
+      "icon": "tune",
+      "title": "Step 3 — Map your columns",
+      "color": "accent",
+      "items": [
+        "For each column the app will pre-select a type: Amount, Date, or No Action.",
+        "Amount columns: set the 'From' currency (original) and 'To' currency (target). The first currency you pick is automatically suggested for all other amount columns.",
+        "Date columns: the app uses the per-row date to look up the exact daily exchange rate for that day.",
+        "Period columns (e.g. 'Jan 2024'): if your amounts are organised by month rather than a date column, set the month/year for each column individually.",
+        "No Action: select this for columns like IDs, descriptions, or any column you don't want converted.",
+        "Aggregate columns (Total, Grand Total, Sub Total): these are automatically excluded from direct conversion and recomputed as the sum of the converted columns after conversion."
+      ]
+    },
+    {
+      "icon": "check_circle",
+      "title": "Step 4 — Confirm and convert",
+      "color": "secondary",
+      "items": [
+        "Tick the 'I confirm the mappings above are correct' checkbox at the bottom once all sheets are configured.",
+        "Click 'Confirm & Convert' to fetch exchange rates and apply them. A spinner indicates the API call is in progress.",
+        "The converted data preview appears in the 'Converted Data' expansion panel beneath the mapping panel."
+      ]
+    },
+    {
+      "icon": "download",
+      "title": "Step 5 — Download the result",
+      "color": "secondary",
+      "items": [
+        "Click the download icon to get the converted Excel file.",
+        "The downloaded file is your original workbook with only the converted amount cells patched — all formatting, styles, merged cells, and other sheets are preserved exactly as uploaded.",
+        "Date values, metadata rows, and non-amount columns remain untouched in the output."
+      ]
+    },
+    {
+      "icon": "info_outline",
+      "title": "Tips & edge cases",
+      "color": "muted",
+      "items": [
+        "Sheets with no amount fields (e.g. notes or reference sheets) are shown with a notice and are copied as-is into the output without any changes.",
+        "If a column contains currency symbols in standalone cells (e.g. '$3,200,000') it is detected as an amount. Long prose sentences that merely mention a dollar amount are not treated as amount columns.",
+        "Exchange rates are fetched from the FetchXRates API. Make sure the selected date or period has available rate data.",
+        "Use the Reset button (left button in the action bar) to clear everything and start over with a new file."
+      ]
+    }
+  ]
+}

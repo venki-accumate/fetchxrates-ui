@@ -293,16 +293,14 @@
                     <mat-panel-description>
                         {{ convertedSheets[0]?.data?.length || 0 }} rows &mdash; exchange rates applied
                     </mat-panel-description>
-                </mat-expansion-panel-header>
-
-                <div class="actionIcons">
                     <button mat-icon-button
-                            (click)="downloadConvertedExcel()"
+                            class="header-download-btn"
+                            (click)="$event.stopPropagation(); downloadConvertedExcel()"
                             matTooltip="Download converted Excel"
                             aria-label="Download Excel">
                         <mat-icon>download</mat-icon>
                     </button>
-                </div>
+                </mat-expansion-panel-header>
 
                 <!-- Single sheet: flat table -->
                 <ng-container *ngIf="convertedSheets.length <= 1">

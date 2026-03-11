@@ -1,0 +1,99 @@
+<div class="um-page">
+
+  <div class="um-page-header">
+    <a class="um-back-btn" routerLink="/dashboard">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
+    <div class="um-page-title-group">
+      <mat-icon class="um-page-icon">receipt_long</mat-icon>
+      <div>
+        <h1 class="um-page-title">Billing &amp; Invoices</h1>
+        <p class="um-page-subtitle">Your payment history and downloadable invoices</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="um-page-body">
+
+    <ng-container *ngIf="!loading; else loadingTpl">
+
+      <ng-container *ngIf="invoices.length > 0">
+        <div class="billing-summary">
+          <div class="summary-card">
+            <mat-icon class="summary-icon accent">paid</mat-icon>
+            <div>
+              <span class="summary-label">Total Paid</span>
+              <span class="summary-value accent">{{ totalPaid | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="summary-card" *ngIf="pendingCount > 0">
+            <mat-icon class="summary-icon warning">pending_actions</mat-icon>
+            <div>
+              <span class="summary-label">Pending</span>
+              <span class="summary-value warning">{{ pendingCount }} invoice{{ pendingCount !== 1 ? 's' : '' }}</span>
+            </div>
+          </div>
+          <div class="summary-card">
+            <mat-icon class="summary-icon">receipt</mat-icon>
+            <div>
+              <span class="summary-label">Total Invoices</span>
+              <span class="summary-value">{{ invoices.length }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="um-card">
+          <div class="invoice-table-wrap">
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th class="text-right">Amount</th>
+                  <th class="text-center">Status</th>
+                  <th class="text-center">Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inv of invoices">
+                  <td class="inv-number">{{ inv.invoiceNumber }}</td>
+                  <td class="inv-date">{{ inv.date }}</td>
+                  <td class="inv-desc">{{ inv.description }}</td>
+                  <td class="inv-amount text-right">{{ inv.amount | currency:inv.currency:'symbol':'1.2-2' }}</td>
+                  <td class="text-center">
+                    <span class="status-badge" [ngClass]="'status-' + inv.status">{{ statusLabel(inv.status) }}</span>
+                  </td>
+                  <td class="text-center">
+                    <button class="download-btn"
+                            [disabled]="!inv.downloadUrl"
+                            (click)="download(inv)"
+                            [matTooltip]="inv.downloadUrl ? 'Download PDF' : 'Not available yet'">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </ng-container>
+
+      <div *ngIf="invoices.length === 0" class="um-empty-state">
+        <mat-icon>receipt_long</mat-icon>
+        <h4>No invoices yet</h4>
+        <p>Your billing history will appear here once you have a paid subscription.</p>
+      </div>
+
+    </ng-container>
+
+    <ng-template #loadingTpl>
+      <div class="um-loading">
+        <div class="um-spinner"></div>
+        <span>Loading invoices\u2026</span>
+      </div>
+    </ng-template>
+
+  </div>
+</div>
+

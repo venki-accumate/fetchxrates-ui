@@ -1,0 +1,51 @@
+<div class="help-dialog">
+
+  <!-- Header -->
+  <div class="help-header">
+    <div class="help-header-text">
+      <div class="help-icon-wrap">
+        <mat-icon>help_outline</mat-icon>
+      </div>
+      <div>
+        <h2 class="help-title">{{ data.title }}</h2>
+        <p class="help-subtitle">{{ data.subtitle }}</p>
+      </div>
+    </div>
+    <button class="close-btn" (click)="close()" aria-label="Close help">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Sections -->
+  <div class="help-body">
+    <div
+      *ngFor="let section of data.sections"
+      class="help-section"
+      [class.color-accent]="section.color === 'accent' || !section.color"
+      [class.color-secondary]="section.color === 'secondary'"
+      [class.color-muted]="section.color === 'muted'"
+    >
+      <div class="section-header">
+        <div class="section-icon">
+          <mat-icon>{{ section.icon }}</mat-icon>
+        </div>
+        <h3 class="section-title">{{ section.title }}</h3>
+      </div>
+      <ul class="section-items">
+        <li *ngFor="let item of section.items">
+          <mat-icon class="bullet-icon">arrow_right</mat-icon>
+          <span>{{ item }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="help-footer">
+    <button mat-flat-button class="got-it-btn" (click)="close()">
+      <mat-icon>check</mat-icon>
+      Got it
+    </button>
+  </div>
+
+</div>
