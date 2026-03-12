@@ -3,7 +3,7 @@
     <mat-accordion>
 
       <!-- ── Existing Schedules panel (shown only if user has scheduling) ───── -->
-      <mat-expansion-panel *ngIf="hasScheduling()" [expanded]="true" class="schedules-panel">
+      <mat-expansion-panel *ngIf="hasScheduling()" [expanded]="schedulesPanelOpen()" (opened)="schedulesPanelOpen.set(true)" (closed)="schedulesPanelOpen.set(false)" class="schedules-panel">
         <mat-expansion-panel-header>
           <mat-panel-title>
             <mat-icon class="panel-icon">event_repeat</mat-icon>
@@ -94,7 +94,7 @@
       </ngx-spinner>
 
       <!-- ── Create / Edit Schedule panel ──────────────────────────────────── -->
-      <mat-expansion-panel [expanded]="true" class="form-panel">
+      <mat-expansion-panel [expanded]="formPanelOpen()" (opened)="formPanelOpen.set(true)" (closed)="formPanelOpen.set(false)" class="form-panel">
         <mat-expansion-panel-header>
           <mat-panel-title>
             <mat-icon class="panel-icon">{{ isEditMode ? 'edit_calendar' : 'add_circle_outline' }}</mat-icon>
@@ -107,20 +107,11 @@
 
         <div class="filter-form">
 
-          <!-- Frequency -->
-          <div class="filter-section">
-            <span class="filter-label">Frequency</span>
-            <select class="map-select" [(ngModel)]="frequency" (ngModelChange)="validationError.set('')">
-              <option *ngFor="let f of FREQUENCIES" [value]="f.value">{{ f.label }}</option>
-            </select>
-          </div>
-
-          <!-- From Currency -->
           <div class="filter-section">
             <span class="filter-label">From Currency</span>
             <select class="map-select" [(ngModel)]="fromCurrency" (ngModelChange)="validationError.set('')">
               <option value="" disabled>Select currency</option>
-              <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+              <option *ngFor="let c of currencies | keyvalue" [value]="c.key">{{ c.value }}</option>
             </select>
           </div>
 
@@ -137,7 +128,7 @@
                   <option
                     *ngFor="let c of availableToCurrencies"
                     [style.display]="c === fromCurrency ? 'none' : ''"
-                    [value]="c">{{ c }}</option>
+                    [value]="c">{{ currencies[c] }}</option>
                 </select>
               </div>
               <div class="listbox-arrows">
@@ -154,11 +145,22 @@
                   <span class="hint-text" *ngIf="selectedToCurrencies.length === 0">&nbsp;(all)</span>
                 </label>
                 <select #selectedSelect multiple class="listbox-select">
-                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ c }}</option>
+                  <option *ngFor="let c of selectedToCurrencies" [value]="c">{{ currencies[c] }}</option>
                 </select>
               </div>
             </div>
           </div>
+          
+          <!-- Column 3: Frequency + Delivery + Statistics + Recipients stacked -->
+          <div class="filter-column">
+
+            <!-- Frequency -->
+            <div class="filter-section">
+              <span class="filter-label">Frequency</span>
+              <select class="map-select" [(ngModel)]="frequency" (ngModelChange)="validationError.set('')">
+                <option *ngFor="let f of FREQUENCIES" [value]="f.value">{{ f.label }}</option>
+              </select>
+            </div>
 
           <!-- Delivery Format -->
           <div class="filter-section">
@@ -172,9 +174,7 @@
           <div class="filter-section" *ngIf="showStatisticsToggle">
             <span class="filter-label">Include Statistics</span>
             <div class="toggle-wrapper">
-              <mat-slide-toggle [(ngModel)]="showStatistics" class="stats-toggle">
-                <span class="toggle-label">{{ showStatistics ? 'Yes' : 'No' }}</span>
-              </mat-slide-toggle>
+              <mat-slide-toggle [(ngModel)]="showStatistics"></mat-slide-toggle>
             </div>
           </div>
 
@@ -191,6 +191,8 @@
               placeholder="email1@example.com, email2@example.com"
               (ngModelChange)="validationError.set('')">
             <span class="hint-text recipients-note">Your account email is always included.</span>
+          </div>
+
           </div>
 
         </div>

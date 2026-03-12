@@ -43,6 +43,22 @@ export interface UserSchedule {
   updatedAt: string;
 }
 
+export interface InvoiceRecord {
+  id: string;
+  stripeInvoiceId: string;
+  invoiceNumber: string | null;
+  amountPaid: number;
+  currency: string;
+  created: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  description: string | null;
+  hostedInvoiceUrl: string | null;
+  invoicePdfUrl: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -141,19 +157,38 @@ export class FetchXRApiService {
   }
 
   /**
-   * GET /schedules/:userId
+   * GET /scheduling-manager/schedules?userId=<userId>
    * Returns the list of saved schedules for a user.
    */
-  getSchedules(userId: string): Observable<UserSchedule[]> {
-    return this.http.get<UserSchedule[]>(`${this.apiUrl}/schedules/${userId}`);
+  getSchedules(email: string): Observable<UserSchedule[]> {
+    const params = new HttpParams().set('email', email);
+    return this.http.get<UserSchedule[]>(
+      `${this.apiUrl}/scheduling-manager/schedules`,
+      { params }
+    );
   }
 
   /**
-   * POST /schedules/:userId
+   * POST /scheduling-manager/schedules
+   * Body: { userId, schedules }
    * Persists the full list of schedules for a user (replaces existing).
+   * Side effects: updates user.json hasScheduling flag + DynamoDB upsert.
    */
-  saveSchedules(userId: string, schedules: UserSchedule[]): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/schedules/${userId}`, { schedules });
+  saveSchedules(email: string, schedules: UserSchedule[], updateUser: boolean): Observable<any> {
+    return this.http.post<any>(
+      `${this.apiUrl}/scheduling-manager/schedules`,
+      { email, schedules, updateUser }
+    );
+  }
+
+  /**
+   * GET /invoice-manager/:emailHash
+   * Returns the invoices array for the given user.
+   */
+  getInvoices(emailHash: string): Observable<InvoiceRecord[]> {
+    return this.http.get<InvoiceRecord[]>(
+      `${this.apiUrl}/invoice-manager/${emailHash}`
+    );
   }
 
   /**

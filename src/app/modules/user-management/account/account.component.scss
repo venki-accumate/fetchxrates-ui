@@ -1,0 +1,184 @@
+// Account-specific styles — base .um-* classes are in styles.scss
+
+.account-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  .account-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    letter-spacing: 0.05em;
+  }
+
+  .account-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .account-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-email {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  width: fit-content;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+  }
+
+  &.badge-pro {
+    background: rgba(34, 183, 27, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(34, 183, 27, 0.3);
+  }
+
+  &.badge-enterprise {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--accent-secondary);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+
+  &.badge-free {
+    background: rgba(113, 128, 150, 0.12);
+    color: var(--text-muted);
+    border: 1px solid rgba(113, 128, 150, 0.25);
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  .info-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.2s;
+
+    &:hover {
+      border-color: rgba(var(--accent-rgb), 0.35);
+    }
+
+    .info-icon {
+      font-size: 1.2rem;
+      width: 1.2rem;
+      height: 1.2rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+
+      &.accent {
+        color: var(--accent);
+      }
+    }
+
+    .info-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+    }
+
+    .info-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .info-value {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      &.accent {
+        color: var(--accent);
+      }
+    }
+  }
+}
+
+.subscription-section {
+  .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 0.35rem;
+
+    mat-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+      color: var(--text-muted);
+    }
+  }
+
+  .section-sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 0 0.875rem;
+  }
+
+  .subscription-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+}

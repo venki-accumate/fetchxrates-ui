@@ -44,6 +44,13 @@ const routes: Routes = [
     loadChildren: () => import('./modules/api/api.module').then(m => m.ApiModule)
   },
   {
+    path: 'user',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./modules/user-management/user-management.module')
+        .then(m => m.UserManagementModule)
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

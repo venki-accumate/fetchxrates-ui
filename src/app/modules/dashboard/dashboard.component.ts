@@ -1,6 +1,7 @@
 import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthService, User } from '../../services/auth.service';
+import { AuthStateService } from '../../services/auth-state.service';
+import { CurrencyService } from '../../services/currency.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,16 +10,23 @@ import { AuthService, User } from '../../services/auth.service';
   styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
-  currentUser: User | null = null;
+  currentUser: any = null;
+  currentUserData: any = null;
   private destroyRef = inject(DestroyRef);
 
-  constructor(private authService: AuthService) {}
+  constructor(private authState: AuthStateService, private currencyService: CurrencyService) {}
 
   ngOnInit(): void {
-    this.authService.currentUser.pipe(
+    this.currencyService.load();
+    this.authState.currentUser$.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(user => {
       this.currentUser = user;
+    });
+    this.authState.currentUserData$.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(userData => {
+      this.currentUserData = userData;
     });
   }
 }

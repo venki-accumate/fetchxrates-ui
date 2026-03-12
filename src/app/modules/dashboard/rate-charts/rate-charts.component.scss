@@ -1,0 +1,204 @@
+.row {
+  width: 90%;
+  margin: 3rem;
+}
+
+// ─── Panel theming (mirrors exchange-rates) ───────────────────────────────────
+
+::ng-deep .filters-panel,
+::ng-deep .results-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px var(--shadow) !important;
+
+  .mat-expansion-panel-header {
+    background: var(--bg-card) !important;
+    border-radius: 12px !important;
+
+    &:hover {
+      background: var(--bg-secondary) !important;
+    }
+  }
+
+  .mat-expansion-panel-header-title {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mat-expansion-panel-header-description {
+    color: var(--text-secondary) !important;
+    font-size: 0.85rem;
+  }
+
+  .mat-expansion-indicator::after {
+    color: var(--accent) !important;
+  }
+
+  .mat-expansion-panel-body {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+}
+
+::ng-deep .results-panel {
+  margin-top: 2rem !important;
+}
+
+.panel-icon {
+  color: var(--accent);
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+// ─── Filter form layout ───────────────────────────────────────────────────────
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5rem;
+  align-items: flex-start;
+  padding: 0.5rem 0 0.75rem;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hint-text {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+// ─── From-currency select ─────────────────────────────────────────────────────
+
+.map-select {
+  appearance: none;
+  background-color: var(--bg-secondary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2322b71b'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 1.75rem 0.35rem 0.7rem;
+  font-size: 0.875rem;
+  height: 38px;
+  min-width: 160px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+}
+
+// ─── Date range ───────────────────────────────────────────────────────────────
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.date-input {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.875rem;
+  height: 38px;
+  min-width: 148px;
+  outline: none;
+  color-scheme: light;
+  :host-context(body.dark-theme) & { color-scheme: dark; }
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.arrow-icon {
+  color: var(--accent);
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+}
+
+// ─── Error banner ─────────────────────────────────────────────────────────────
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  margin-top: 1rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--danger, #ef4444);
+  font-size: 0.875rem;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-shrink: 0;
+  }
+}
+
+// ─── Chart result panels ──────────────────────────────────────────────────────
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.chart-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+
+  .chart-icon {
+    color: var(--accent);
+    font-size: 1.2rem;
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+}

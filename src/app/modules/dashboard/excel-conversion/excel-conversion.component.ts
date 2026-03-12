@@ -1,18 +1,27 @@
-import { Component, DoCheck } from '@angular/core';
+import { Component, ViewChild, DoCheck, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { FetchXRApiService, ExcelConversionRatesPayload } from '../../../services/fetchXR-api.service';
+import { PageHelpService } from '../../../services/page-help.service';
+import { CurrencyService } from '../../../services/currency.service';
+import helpContent from './excel-conversion.help.json';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CommonModule } from '@angular/common';
 import { ButtonBarComponent } from '../../../components/button-bar/button-bar.component';
 import { DataTableComponent } from '../../../components/data-table/data-table.component';
+import { ExcelReportComponent, GenericExcelWorkbook } from '../../../components/excel-report/excel-report.component';
 import { FormsModule } from '@angular/forms';
-
-declare const XLSX: any;
+import * as ExcelJS from 'exceljs';
+import * as fflate from 'fflate';
+import {
+  CellStyleCapture, RowStyleCapture, SheetStyleCapture
+} from '../../../components/excel-report/excel-report.component';
 
 interface ColumnAnalysis {
   columnIndex: number;
@@ -31,6 +40,9 @@ interface SheetData {
   headers: string[];
   data: any[][];
   columnAnalysis: ColumnAnalysis[];
+  /** 0-based original worksheet column index for each entry in headers[]. Used to
+   *  map back to the right cell when writing converted values into the original workbook. */
+  originalColumnIndices: number[];
 }
 
 interface ColumnMapping {
@@ -48,12 +60,15 @@ interface ColumnMapping {
   templateUrl: './excel-conversion.component.html',
   styleUrl: './excel-conversion.component.scss',
   imports: [
-    MatIconModule, MatExpansionModule, MatTableModule, MatSelectModule,
+    MatIconModule, MatButtonModule, MatTooltipModule,
+    MatExpansionModule, MatTableModule, MatSelectModule,
     MatCheckboxModule, MatFormFieldModule, CommonModule, FormsModule,
-    ButtonBarComponent, DataTableComponent
+    ButtonBarComponent, DataTableComponent, ExcelReportComponent
   ]
 })
-export class ExcelConversionComponent implements DoCheck {
+export class ExcelConversionComponent implements DoCheck, OnInit, OnDestroy {
+
+  @ViewChild('excelReport') excelReport!: ExcelReportComponent;
 
   uploadFilesLength = 0;
   convertedData: SheetData[] = [];
@@ -71,6 +86,13 @@ export class ExcelConversionComponent implements DoCheck {
   /** Converted sheets produced after applying exchange rates to the original data */
   convertedSheets: SheetData[] = [];
 
+  /** Raw per-cell styles captured from the uploaded Excel file, keyed by sheet name.
+   *  Retained for potential generic export; not used by the download-original path. */
+  uploadedFileStyles: Record<string, SheetStyleCapture> = {};
+  /** Original file ArrayBuffer keyed by sheet name (all sheets in one workbook share the same buffer).
+   *  Used by downloadConvertedExcel to load the original file and patch only the converted cells. */
+  private originalFileBufferBySheet: Record<string, ArrayBuffer> = {};
+
   /** Unique target currencies across all converted amount columns, e.g. "HKD" or "HKD, USD" */
   get convertedToCurrencies(): string {
     const currencies = new Set<string>();
@@ -82,7 +104,20 @@ export class ExcelConversionComponent implements DoCheck {
     return [...currencies].join(', ');
   }
 
-  constructor(private fetchXRApiService: FetchXRApiService) {}
+  constructor(
+    private fetchXRApiService: FetchXRApiService,
+    private ngZone: NgZone,
+    private pageHelpService: PageHelpService,
+    readonly currencyService: CurrencyService
+  ) {}
+
+  ngOnInit(): void {
+    this.pageHelpService.registerHelp(helpContent as any);
+  }
+
+  ngOnDestroy(): void {
+    this.pageHelpService.clearHelp();
+  }
 
   ngDoCheck(): void {
     const next = this.computeCanConvert();
@@ -106,16 +141,10 @@ export class ExcelConversionComponent implements DoCheck {
    * Per-sheet column mapping: sheetName → array of ColumnMapping (one per header column)
    */
   columnMappings: Record<string, ColumnMapping[]> = {};
-  /** Per-sheet "I confirm" checkbox state */
-  mappingConfirmed: Record<string, boolean> = {};
+  /** Single global "I confirm" checkbox — covers all sheets at once */
+  allMappingsConfirmed = false;
   /** Memoised month-year periods extracted from sheet headers and metadata */
   private periodsCache: Record<string, string[]> = {};
-
-  readonly COMMON_CURRENCIES = [
-    'AUD','BRL','CAD','CHF','CNY','EUR','GBP','HKD','IDR','INR',
-    'JPY','KRW','MXN','MYR','NOK','NZD','PHP','PLN','RUB','SAR',
-    'SEK','SGD','THB','TRY','TWD','USD','ZAR'
-  ];
 
   readonly MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   readonly TODAY  = new Date();
@@ -204,9 +233,11 @@ export class ExcelConversionComponent implements DoCheck {
   /** Returns true when every sheet is ready to convert */
   private computeCanConvert(): boolean {
     if (!this.convertedData.length) return false;
+    if (!this.allMappingsConfirmed) return false;
     return this.convertedData.every(sheet => {
+      // No-amount sheets need no header confirmation or mapping — always pass
+      if (!this.hasAmountFields(sheet)) return true;
       if (this.headerConfirmations[sheet.sheetName] !== true) return false;
-      if (!this.mappingConfirmed[sheet.sheetName]) return false;
       const mappings = this.columnMappings[sheet.sheetName];
       if (!mappings) return false;
       const hasDateCol = !!this.getDateValueColumn(sheet);
@@ -255,6 +286,11 @@ export class ExcelConversionComponent implements DoCheck {
   }
 
   // ─── Date column & period detection ─────────────────────────────────────────────
+
+  /** Returns true when the sheet has at least one column flagged as an amount field */
+  hasAmountFields(sheet: SheetData): boolean {
+    return sheet.columnAnalysis.some(col => col.isAmountField);
+  }
 
   /** Returns the name of the first date-value column (dataType === 'date'), or null */
   getDateValueColumn(sheet: SheetData): string | null {
@@ -434,7 +470,6 @@ export class ExcelConversionComponent implements DoCheck {
    * This method is called whenever a file is uploaded.
    */
   onFileChange(event: any, drag = false): void {
-    console.log('File upload event:');
     const files: any = drag ? event.dataTransfer.files : event.target.files;
     
     // Validate file types
@@ -450,7 +485,6 @@ export class ExcelConversionComponent implements DoCheck {
     }
 
     this.uploadFilesLength += validFiles.length;
-    console.log('Files uploaded:', this.uploadFilesLength);
     validFiles.forEach((file: any) => this.fileDataToJSON(file));
   }
 
@@ -462,7 +496,6 @@ export class ExcelConversionComponent implements DoCheck {
    * Process Excel/CSV file and extract all sheets with intelligent header detection
    */
   fileDataToJSON(file: any): void {
-    console.log('Processing file:', file.name);
     const extension = file.name.split('.').pop()?.toLowerCase();
     
     if (extension === 'csv') {
@@ -487,41 +520,170 @@ export class ExcelConversionComponent implements DoCheck {
 
       const sheetData = this.processSheet(file.name.replace('.csv', ''), null, rows);
       this.convertedData.push(sheetData);
-
-      console.log('CSV Processed:', this.convertedData);
     };
 
     reader.readAsText(file);
   }
 
   /**
-   * Process Excel file and extract all sheets
+   * Process Excel file and extract all sheets using ExcelJS.
+   * Also captures per-cell styles into this.uploadedFileStyles for later use.
    */
   private processExcelFile(file: File): void {
     const reader = new FileReader();
 
-    reader.onload = (e: ProgressEvent<FileReader>) => {
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
       const data = e.target?.result;
       if (!data) return;
 
-      const wb = XLSX.read(data, { type: 'array', cellDates: true });
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(data as ArrayBuffer);
 
-      this.convertedData = wb.SheetNames
-        .map((sheetName: any) => {
-          const ws = wb.Sheets[sheetName];
-          const rows = XLSX.utils.sheet_to_json(ws, {
-            header: 1,
-            blankrows: false,
-            defval: null,
-            raw: true
-          }) as any[][];
+      // After await, we're running outside Angular's zone (async/await continuation
+      // is a microtask that Zone.js doesn't re-enter). Collect results in local
+      // variables and commit them via ngZone.run() so change detection fires immediately.
+      const processedSheets:  SheetData[]                       = [];
+      const processedStyles:  Record<string, SheetStyleCapture> = {};
+      const processedBuffers: Record<string, ArrayBuffer>        = {};
 
-          if (!rows.length) return null;
-          return this.processSheet(sheetName, ws, rows);
-        })
-        .filter(Boolean) as SheetData[];
+      for (const worksheet of workbook.worksheets) {
+        const sheetName = worksheet.name;
+        const lastRow   = worksheet.lastRow?.number ?? 0;
+        const lastCol   = worksheet.columnCount   ?? 0;
 
-      console.log('All Sheets Processed:', this.convertedData);
+        if (lastRow === 0 || lastCol === 0) continue;
+
+        // ── 1. Capture column widths ───────────────────────────────────────
+        const colWidths: (number | undefined)[] = [];
+        for (let c = 1; c <= lastCol; c++) {
+          colWidths[c - 1] = worksheet.getColumn(c).width;
+        }
+
+        // ── 2. Capture per-cell styles (all rows, before any filtering) ────
+        const styleRows: RowStyleCapture[] = [];
+        for (let r = 1; r <= lastRow; r++) {
+          const exRow = worksheet.getRow(r);
+          const cells: (CellStyleCapture | null)[] = [];
+
+          for (let c = 1; c <= lastCol; c++) {
+            const cell = exRow.getCell(c);
+            const s    = cell.style;
+            cells[c - 1] = (s && (s.font || s.fill || s.border || s.alignment || s.numFmt))
+              ? {
+                  font:      s.font      ? { ...s.font }      : undefined,
+                  fill:      s.fill      ? { ...s.fill }      : undefined,
+                  border:    s.border    ? { ...s.border }    : undefined,
+                  alignment: s.alignment ? { ...s.alignment } : undefined,
+                  numFmt:    s.numFmt    || undefined,
+                }
+              : null;
+          }
+
+          styleRows[r - 1] = { height: exRow.height, cells };
+        }
+
+        // ── 3. Parse merged-cell ranges ───────────────────────────────────
+        //       Used by detectHeaderRow (title-row rejection) and stored in
+        //       processedStyles so merged cells can be faithfully reproduced on export.
+        const colLetterToIndex = (col: string): number =>
+          col.split('').reduce((acc, ch) => acc * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+
+        const merges: Array<{ s: { r: number; c: number }; e: { r: number; c: number } }> = [];
+        const worksheetMerges: string[] = (worksheet as any).model?.merges ?? [];
+        for (const mergeStr of worksheetMerges) {
+          const m = mergeStr.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+          if (m) {
+            merges.push({
+              s: { r: parseInt(m[2]) - 1, c: colLetterToIndex(m[1]) },
+              e: { r: parseInt(m[4]) - 1, c: colLetterToIndex(m[3]) },
+            });
+          }
+        }
+
+        // Now that merges are known we can capture the complete style snapshot.
+        processedStyles[sheetName] = { rows: styleRows, colWidths, merges };
+
+        // ── 4. Build slave-cell index (0-based r,c) from merge ranges ─────────
+        //       ExcelJS echoes the master cell's value for every cell in a merged
+        //       range, so a title row like "PROFIT & LOSS REPORT" merged across all
+        //       columns would appear full of identical strings and fool isStrictHeaderRow.
+        //       We null out every slave position so merged rows look like a single
+        //       populated cell followed by nulls — which the header detector correctly
+        //       rejects (span < 3, or has gaps).
+        const slaveCells = new Set<string>();
+        for (const merge of merges) {
+          for (let sr = merge.s.r; sr <= merge.e.r; sr++) {
+            for (let sc = merge.s.c; sc <= merge.e.c; sc++) {
+              if (sr !== merge.s.r || sc !== merge.s.c) {
+                slaveCells.add(`${sr},${sc}`); // 0-based
+              }
+            }
+          }
+        }
+
+        // ── 5. Extract row data (skip blank rows) ──────────────────────────
+        const rows: any[][] = [];
+        for (let r = 1; r <= lastRow; r++) {
+          const exRow  = worksheet.getRow(r);
+          const rowData: any[] = new Array(lastCol).fill(null);
+          let hasValue = false;
+
+          for (let c = 1; c <= lastCol; c++) {
+            // Slave cells in merged ranges — treat as null so merged title rows
+            // (e.g. report name spanning all columns) aren't mistaken for header rows.
+            if (slaveCells.has(`${r - 1},${c - 1}`)) continue;
+
+            const cell = exRow.getCell(c);
+            let value: any = cell.value;
+
+            // Unwrap formula → use cached result
+            if (value !== null && typeof value === 'object' && 'result' in value) {
+              value = (value as ExcelJS.CellFormulaValue).result ?? null;
+            }
+            // Unwrap rich-text → plain string
+            if (value !== null && typeof value === 'object' && 'richText' in value) {
+              value = (value as ExcelJS.CellRichTextValue).richText.map((rt: any) => rt.text).join('');
+            }
+            // Unwrap hyperlink → display text
+            if (value !== null && typeof value === 'object' && 'text' in value && !('richText' in value)) {
+              value = (value as any).text ?? null;
+            }
+            // Nullify error values
+            if (value !== null && typeof value === 'object' && 'error' in value) {
+              value = null;
+            }
+
+            rowData[c - 1] = value ?? null;
+            if (value !== null && value !== undefined && value !== '') hasValue = true;
+          }
+
+          // Always push every row — including blank rows — so that row indices in
+          // `rows` stay aligned with `styleRows` (both are 0-based from the sheet start).
+          // Blank rows are preserved in sheet.data for faithful round-trip export, and
+          // detectHeaderRow / analyzeColumns already skip/ignore all-null rows.
+          rows.push(rowData);
+        }
+
+        // Trim trailing blank rows (they add no value and inflate the sheet).
+        while (rows.length && rows[rows.length - 1].every((v: any) => v === null || v === undefined || v === '')) {
+          rows.pop();
+        }
+
+        if (!rows.some(r => r.some((v: any) => v !== null && v !== undefined && v !== ''))) continue;
+
+        const sheetData = this.processSheet(sheetName, merges, rows);
+        processedSheets.push(sheetData);
+        // All sheets in the same workbook share the same ArrayBuffer reference.
+        processedBuffers[sheetName] = data as ArrayBuffer;
+      }
+
+      // Commit inside Angular's zone so change detection fires immediately.
+      this.ngZone.run(() => {
+        this.convertedData             = processedSheets;
+        this.uploadedFileStyles         = processedStyles;
+        // Merge rather than replace so multi-file uploads accumulate correctly.
+        this.originalFileBufferBySheet = { ...this.originalFileBufferBySheet, ...processedBuffers };
+      });
     };
 
     reader.readAsArrayBuffer(file);
@@ -593,10 +755,15 @@ export class ExcelConversionComponent implements DoCheck {
   }
 
   /**
-   * Process a single sheet: detect header, extract metadata, analyze columns
+   * Process a single sheet: detect header, extract metadata, analyze columns.
+   * @param merges Optional merged-cell ranges (from Excel) used for header detection.
    */
-  private processSheet(sheetName: string, ws: any, rows: any[][]): SheetData {
-    const headerRowIndex = this.detectHeaderRow(rows, ws);
+  private processSheet(
+    sheetName: string,
+    merges:    Array<{ s: { r: number; c: number }; e: { r: number; c: number } }> | null,
+    rows:      any[][]
+  ): SheetData {
+    const headerRowIndex = this.detectHeaderRow(rows, merges ?? undefined);
     const metadata = rows.slice(0, headerRowIndex);
     const headers = this.extractHeaders(rows[headerRowIndex] || []);
     const data = rows.slice(headerRowIndex + 1);
@@ -614,9 +781,11 @@ export class ExcelConversionComponent implements DoCheck {
       sheetName,
       metadata,
       headerRowIndex,
-      headers:        keep.map(i => headers[i]),
-      data:           data.map(row => keep.map(i => row[i] ?? null)),
-      columnAnalysis: keep.map(i => columnAnalysis[i])
+      headers:               keep.map(i => headers[i]),
+      data:                  data.map(row => keep.map(i => row[i] ?? null)),
+      columnAnalysis:        keep.map(i => columnAnalysis[i]),
+      // keep[j] is the 0-based column index in the original worksheet row for headers[j].
+      originalColumnIndices: keep
     };
   }
 
@@ -625,17 +794,20 @@ export class ExcelConversionComponent implements DoCheck {
    * Intelligently detect the header row
    * Logic: Find first row where all non-empty cells are text AND next row has data
    */
-  private detectHeaderRow(rows: any[][], ws?: any): number {
+  private detectHeaderRow(
+    rows:   any[][],
+    merges?: Array<{ s: { r: number; c: number }; e: { r: number; c: number } }>
+  ): number {
     const isBlank = (v: any) =>
       v == null || v === '' || (typeof v === 'string' && v.trim() === '');
 
     const isHeaderCell = (v: any) =>
       typeof v === 'string' && v.trim() !== ''; // strict: header cells must be strings
 
-    const merges = ((ws as any)?.['!merges'] ?? []) as Array<{ s: { r: number; c: number }; e: { r: number; c: number } }>;
+    const mergeList = merges ?? [];
 
     const maxMergeWidthForRow = (r: number) =>
-      merges
+      mergeList
         .filter(m => m.s.r === r)
         .reduce((max, m) => Math.max(max, m.e.c - m.s.c + 1), 1);
 
@@ -656,14 +828,33 @@ export class ExcelConversionComponent implements DoCheck {
       if (cells.some(isBlank)) return null;                 // no gaps allowed
       if (!cells.every(isHeaderCell)) return null;          // all must be non-empty strings
 
+      // Reject if 3+ cells share the same value.
+      // Real header rows have unique column names; echoed merged-title rows (e.g. ExcelJS
+      // duplicating a master cell across all slave columns) or repeated-value rows fail this.
+      const valueCounts = new Map<string, number>();
+      for (const cell of cells) {
+        const key = String(cell).trim().toLowerCase();
+        valueCounts.set(key, (valueCounts.get(key) ?? 0) + 1);
+      }
+      if ([...valueCounts.values()].some(count => count >= 3)) return null;
+
       return s;
     };
 
+    // Primary check: rows immediately after candidate have numeric/Date/date-string values.
+    // Also accepts "Mon-YYYY" / "Mon YYYY" style text dates (e.g. "Jan-1989") which ExcelJS
+    // returns as plain strings rather than Date instances.
+    // Look up to 3 rows ahead so a single blank separator row between header and data
+    // (common in RBA / central-bank files) doesn't cause the primary scan to fail.
     const hasNumericOrDateSoon = (i: number) =>
-      [1, 2]
+      [1, 2, 3]
         .map(k => rows[i + k])
         .filter(Boolean)
-        .some(r => r.some(v => typeof v === 'number' || v instanceof Date));
+        .some(r => r.some((v: any) =>
+          typeof v === 'number' ||
+          v instanceof Date ||
+          (typeof v === 'string' && (this.isDateString(v) || !!this.parseMonthYear(v)))
+        ));
 
     for (let i = 0; i < rows.length - 1; i++) {
       const s = isStrictHeaderRow(rows[i]);
@@ -676,6 +867,28 @@ export class ExcelConversionComponent implements DoCheck {
       if (!hasNumericOrDateSoon(i)) continue;
 
       return i;
+    }
+
+    // Secondary scan — no numeric/date-soon requirement.
+    // Handles all-text datasets (lookup tables, reference sheets, etc.) where the data rows
+    // contain only strings but the header row still has ≥3 unique string column names.
+    // A candidate is accepted when ≥1 of the next 3 rows has at least ½ as many
+    // filled cells as the header span (confirming structured data follows, not a prose block).
+    for (let i = 0; i < rows.length - 1; i++) {
+      const s = isStrictHeaderRow(rows[i]);
+      if (!s) continue;
+
+      const mergeWidth = maxMergeWidthForRow(i);
+      if (mergeWidth >= 3 && s.width <= 2) continue;
+
+      const threshold    = Math.max(2, Math.floor(s.width / 2));
+      // Look up to 5 rows ahead so blank separator rows (now preserved) don't block detection.
+      const nextRows     = [rows[i+1], rows[i+2], rows[i+3], rows[i+4], rows[i+5]].filter(Boolean);
+      const qualifiedNext = nextRows.filter((r: any[]) =>
+        r.filter((v: any) => !isBlank(v)).length >= threshold
+      );
+
+      if (qualifiedNext.length >= 1) return i;
     }
 
     return 0;
@@ -754,7 +967,10 @@ export class ExcelConversionComponent implements DoCheck {
     let decimalNumberCount = 0; // JS numbers that are not integers
     let detectedCurrency: string | undefined;
 
-    const currencyPatterns = /[$\u20ac\u00a3\u00a5\u20b9\u20bd]/; // $ € £ ¥ ₹ ₽
+    // Matches a cell that IS a standalone currency amount: "$3,200,000", "£1,234.56", "€100"
+    // Does NOT match prose that merely mentions a price: "approximately $0.7 billion"
+    const standaloneAmountRe = /^\s*[$\u20ac\u00a3\u00a5\u20b9\u20bd]\s*[\d,]+(\.[\d]+)?\s*$|^\s*[\d,]+(\.[\d]+)?\s*[$\u20ac\u00a3\u00a5\u20b9\u20bd]\s*$/;
+    const currencySymbolRe   = /[$\u20ac\u00a3\u00a5\u20b9\u20bd]/;
     const amountKeywords = /amount|price|cost|value|total|sum|balance|payment|revenue|expense|salary|fee|charge/i;
     const dateKeywords   = /date|time|day|month|year|period|timestamp/i;
     // Comma-formatted number: 1,234 | 1,234.56 | 12,34,567 (Indian style)
@@ -767,11 +983,12 @@ export class ExcelConversionComponent implements DoCheck {
         numberCount++;
         if (!Number.isInteger(val)) decimalNumberCount++;
       } else if (typeof val === 'string') {
-        // Currency symbol check
-        const currencyMatch = val.match(currencyPatterns);
-        if (currencyMatch) {
+        // Currency symbol check — only count as currency if the cell IS a standalone
+        // amount (e.g. "$3,200,000"), not prose text that mentions a price in passing.
+        if (standaloneAmountRe.test(val)) {
           currencyCount++;
-          detectedCurrency = detectedCurrency || currencyMatch[0];
+          const sym = val.match(currencySymbolRe);
+          detectedCurrency = detectedCurrency || (sym ? sym[0] : undefined);
         }
         // Comma-formatted number check (before stripping commas)
         if (commaNumberRe.test(val)) commaNumberCount++;
@@ -882,7 +1099,7 @@ export class ExcelConversionComponent implements DoCheck {
     if (!this.sheetTableCache.has(sheet)) {
       const rows = sheet.data.map(row => {
         const obj: any = {};
-        sheet.headers.forEach((header, i) => { obj[header] = row[i] ?? null; });
+        sheet.headers.forEach((header, i) => { obj[header] = this.formatCellForDisplay(row[i] ?? null); });
         return obj;
       });
       this.sheetTableCache.set(sheet, rows);
@@ -905,7 +1122,13 @@ export class ExcelConversionComponent implements DoCheck {
   }
 
   getCandidateRows(sheet: SheetData): any[][] {
-    return [...sheet.metadata, sheet.headers as any[]];
+    const base  = [...sheet.metadata, sheet.headers as any[]];
+    // Include up to 4 non-empty data rows so the user can pick a header that
+    // lies further down the sheet when the auto-detected header is too early.
+    const extra = sheet.data
+      .filter(row => row.some(v => v !== null && v !== undefined && v !== ''))
+      .slice(0, 4);
+    return [...base, ...extra];
   }
 
   applyHeaderChange(sheetIndex: number): void {
@@ -913,19 +1136,45 @@ export class ExcelConversionComponent implements DoCheck {
     const selectedIdx = this.pendingHeaderIndex[sheet.sheetName] ?? sheet.metadata.length;
     const candidates = this.getCandidateRows(sheet);
 
-    const newHeaders = this.extractHeaders(candidates[selectedIdx] || []);
+    // candidates layout:
+    //   [0 .. metadata.length-1]  = metadata rows (before original header)
+    //   [metadata.length]         = original header row
+    //   [metadata.length+1 ..]    = first N non-empty rows from sheet.data (T+4 extension)
+    const originalCandidateCount = sheet.metadata.length + 1;
+
+    const newHeaders  = this.extractHeaders(candidates[selectedIdx] || []);
     const newMetadata = candidates.slice(0, selectedIdx) as any[][];
-    const between = candidates.slice(selectedIdx + 1) as any[][];
-    const newData = [...between, ...sheet.data];
+
+    // Rows that sit between the selection and the start of sheet.data in candidates.
+    // Only slice up to originalCandidateCount so we don't pull data rows twice.
+    const between = candidates.slice(selectedIdx + 1, originalCandidateCount) as any[][];
+
+    let newData: any[][];
+    if (selectedIdx < originalCandidateCount) {
+      // Selected row is within original metadata / header area — dataRowsSkipped is always 0
+      // here, so just concatenate between-rows with the full data array (blank rows included).
+      newData = [...between, ...sheet.data];
+    } else {
+      // Selected row is one of the extra non-blank data rows surfaced by getCandidateRows.
+      // sheet.data may now contain blank rows, so we can't rely on a positional count.
+      // Use reference equality to find where the selected row actually sits in sheet.data.
+      const selectedRow = candidates[selectedIdx];
+      const dataIdx = sheet.data.indexOf(selectedRow);
+      newData = dataIdx !== -1 ? sheet.data.slice(dataIdx + 1) : [];
+    }
+
     const newColumnAnalysis = this.analyzeColumns(newHeaders, newData);
 
     this.convertedData[sheetIndex] = {
-      sheetName: sheet.sheetName,
-      metadata: newMetadata,
-      headerRowIndex: selectedIdx,
-      headers: newHeaders,
-      data: newData,
-      columnAnalysis: newColumnAnalysis
+      sheetName:             sheet.sheetName,
+      metadata:              newMetadata,
+      headerRowIndex:        selectedIdx,
+      headers:               newHeaders,
+      data:                  newData,
+      columnAnalysis:        newColumnAnalysis,
+      // No phantom filtering in applyHeaderChange — each position j maps directly to
+      // worksheet column j (0-based), so originalColumnIndices is just [0, 1, 2, ...].
+      originalColumnIndices: newHeaders.map((_, j) => j)
     };
 
     delete this.headerConfirmations[sheet.sheetName];
@@ -949,7 +1198,6 @@ export class ExcelConversionComponent implements DoCheck {
     const callDescriptors: { sheetName: string; from: string; to: string; payload: ExcelConversionRatesPayload }[] = [];
 
     for (const sheet of this.convertedData) {
-      console.log(sheet);
       const mappings       = this.getColumnMappings(sheet);
       const dateCol        = this.getDateValueColumn(sheet);
       const amountMappings = mappings.filter(m => m.type === 'amount' && m.fromCurrency && m.toCurrency);
@@ -1010,7 +1258,6 @@ export class ExcelConversionComponent implements DoCheck {
           this.conversionRates[`${sheetName}||${from}||${to}`] = rates;
         });
         this.applyConversions();
-        console.log('Converted sheets:', this.convertedSheets);
         this.isConverting = false;
       },
       error: (err) => {
@@ -1041,6 +1288,16 @@ export class ExcelConversionComponent implements DoCheck {
         if (m.type !== 'amount') continue;
         const idx = sheet.headers.indexOf(m.columnName);
         if (idx !== -1) amountColMap.set(idx, m);
+      }
+
+      // Aggregate columns (Total, Grand Total, etc.) are suppressed during mapping.
+      // Collect their indices so we can recompute them after each row is converted.
+      const aggregateColIndices: number[] = [];
+      for (const m of mappings) {
+        if (m.type === 'none' && this.isAggregateColumn(m.columnName)) {
+          const idx = sheet.headers.indexOf(m.columnName);
+          if (idx !== -1) aggregateColIndices.push(idx);
+        }
       }
 
       // Pre-resolve fixed rates for Type 2 (period columns) to avoid repeating per row
@@ -1089,11 +1346,40 @@ export class ExcelConversionComponent implements DoCheck {
           }
         }
 
+        // Recompute suppressed aggregate columns (Total / Grand Total / etc.) as the
+        // sum of all converted amount columns in this row.
+        // NOTE: must run before Phase 3 formatting so we can still read numeric values.
+        if (aggregateColIndices.length > 0 && amountColMap.size > 0) {
+          const convertedSum = Array.from(amountColMap.keys()).reduce((acc, colIdx) => {
+            const val = newRow[colIdx];
+            return acc + (typeof val === 'number' && !isNaN(val) ? val : 0);
+          }, 0);
+          for (const aggIdx of aggregateColIndices) {
+            newRow[aggIdx] = parseFloat(convertedSum.toFixed(2));
+          }
+        }
+
+        // Phase 3 — format all converted amount + aggregate columns as comma-separated
+        // values (equivalent to Angular CurrencyPipe without the symbol, e.g. 1,234.56)
+        for (const colIdx of amountColMap.keys()) {
+          const v = newRow[colIdx];
+          if (typeof v === 'number' && !isNaN(v)) newRow[colIdx] = this.formatAmount(v);
+        }
+        for (const aggIdx of aggregateColIndices) {
+          const v = newRow[aggIdx];
+          if (typeof v === 'number' && !isNaN(v)) newRow[aggIdx] = this.formatAmount(v);
+        }
+
         return newRow;
       });
 
       return { ...sheet, data: newData };
     });
+  }
+
+  /** Formats a number as a comma-separated decimal string (CurrencyPipe without symbol). e.g. 1234567.8 → "1,234,567.80" */
+  private formatAmount(value: number): string {
+    return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   /** Converts "Jan 2024" → "2024-01-31" (last day of month) for the API date format */
@@ -1109,6 +1395,22 @@ export class ExcelConversionComponent implements DoCheck {
       return `${m[2]}-${String(idx + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
     }
     return null;
+  }
+
+  /**
+   * Formats a cell value for display in the data table.
+   * Date objects are converted to M/D/YY (e.g. "1/31/13") to match the
+   * original spreadsheet display rather than showing the full Date.toString().
+   */
+  private formatCellForDisplay(val: any): any {
+    if (val instanceof Date) {
+      if (isNaN(val.getTime())) return '';
+      const m = val.getMonth() + 1;
+      const d = val.getDate();
+      const y = String(val.getFullYear()).slice(-2);
+      return `${m}/${d}/${y}`;
+    }
+    return val;
   }
 
   /** Normalises a Date object or date string to "YYYY-MM-DD", or null if unparseable */
@@ -1127,17 +1429,19 @@ export class ExcelConversionComponent implements DoCheck {
    * Reset and allow user to upload a different file
    */
   resetUpload(): void {
-    this.convertedData    = [];
-    this.convertedSheets  = [];
-    this.conversionRates  = {};
-    this.sheetTableCache  = new WeakMap();
+    this.convertedData       = [];
+    this.convertedSheets     = [];
+    this.conversionRates     = {};
+    this.uploadedFileStyles  = {};
+    this.sheetTableCache     = new WeakMap();
     this.headerConfirmations = {};
     this.pendingHeaderIndex  = {};
     this.columnMappings      = {};
-    this.mappingConfirmed    = {};
-    this.periodsCache        = {};
-    this.uploadFilesLength   = 0;
-    this.uploadError         = false;
+    this.allMappingsConfirmed = false;
+    this.periodsCache              = {};
+    this.originalFileBufferBySheet = {};
+    this.uploadFilesLength         = 0;
+    this.uploadError               = false;
   }
 
   handleAction(side: 'left' | 'right'): void {
@@ -1152,6 +1456,210 @@ export class ExcelConversionComponent implements DoCheck {
 
   getCurrencyColumns(sheet: SheetData): ColumnMapping[] {
     return this.getColumnMappings(sheet).filter(m => m.type === 'amount' || m.columnName.toLowerCase().includes('total'));
+  }
+
+  /**
+   * Downloads the converted workbook by patching ONLY the changed cell values
+   * directly inside the original xlsx zip — no ExcelJS parse/serialize round-trip.
+   *
+   * An xlsx file is a zip containing XML files.  We unzip the original buffer,
+   * locate each worksheet XML, surgically replace only the <v> (value) elements
+   * of the converted cells, then re-zip.  Every other byte — styles, themes,
+   * merges, charts, print settings — is left completely untouched.
+   */
+  downloadConvertedExcel(): void {
+    if (!this.convertedSheets.length) return;
+
+    // Group converted sheets by source buffer (one output file per uploaded workbook).
+    const bufferToSheetNames = new Map<ArrayBuffer, string[]>();
+    for (const sheet of this.convertedSheets) {
+      const buf = this.originalFileBufferBySheet[sheet.sheetName];
+      if (!buf) continue;
+      if (!bufferToSheetNames.has(buf)) bufferToSheetNames.set(buf, []);
+      bufferToSheetNames.get(buf)!.push(sheet.sheetName);
+    }
+
+    const fileName = `Converted_${new Date().toISOString().slice(0, 10)}`;
+
+    for (const [buf, sheetNamesForBuf] of bufferToSheetNames) {
+      // ── 1. Unzip the original xlsx ───────────────────────────────────────
+      const unzipped = fflate.unzipSync(new Uint8Array(buf));
+
+      // ── 2. Parse workbook.xml to get the sheetName → rId → file-path mapping ─
+      const wbXml    = new TextDecoder().decode(unzipped['xl/workbook.xml']);
+      const wbRelsXml = new TextDecoder().decode(
+        unzipped['xl/_rels/workbook.xml.rels'] ?? new Uint8Array()
+      );
+
+      // sheet name → xl-relative file path (e.g. "worksheets/sheet1.xml")
+      const sheetPathMap = this.buildSheetPathMap(wbXml, wbRelsXml);
+
+      // ── 3. For each sheet, build the cell-patch map and rewrite the XML ──
+      for (const sheetName of sheetNamesForBuf) {
+        const convertedSheet = this.convertedSheets.find(s => s.sheetName === sheetName);
+        const originalSheet  = this.convertedData.find(s => s.sheetName === sheetName);
+        if (!convertedSheet || !originalSheet) continue;
+
+        const relPath  = sheetPathMap.get(sheetName);
+        const fullPath = relPath ? `xl/${relPath}` : null;
+        if (!fullPath || !unzipped[fullPath]) continue;
+
+        const mappings = this.getColumnMappings(originalSheet);
+
+        // Build map: "A1" cell address → new numeric value
+        const patches = new Map<string, number>();
+
+        const modifiedColIndices: number[] = [];
+        for (let j = 0; j < originalSheet.headers.length; j++) {
+          const m = mappings.find(mp => mp.columnName === originalSheet.headers[j]);
+          if (!m) continue;
+          if (m.type === 'amount' ||
+             (m.type === 'none' && this.isAggregateColumn(m.columnName))) {
+            modifiedColIndices.push(j);
+          }
+        }
+        if (!modifiedColIndices.length) continue;
+
+        for (let k = 0; k < convertedSheet.data.length; k++) {
+          const rowValues = convertedSheet.data[k];
+          if (!rowValues || rowValues.every((v: any) => v === null || v === undefined || v === '')) continue;
+
+          // 1-based worksheet row number (headerRowIndex is 0-based in rows[])
+          const wsRowNum = originalSheet.headerRowIndex + k + 2;
+
+          for (const j of modifiedColIndices) {
+            const wsColNum = (originalSheet.originalColumnIndices[j] ?? j) + 1;
+            const val      = rowValues[j];
+            if (val === null || val === undefined || val === '') continue;
+
+            const num = typeof val === 'number'
+              ? val
+              : parseFloat(String(val).replace(/,/g, ''));
+            if (isNaN(num)) continue;
+
+            const cellRef = this.colNumToLetter(wsColNum) + wsRowNum;
+            patches.set(cellRef, num);
+          }
+        }
+
+        if (!patches.size) continue;
+
+        // Patch the worksheet XML
+        const originalXml = new TextDecoder().decode(unzipped[fullPath]);
+        const patchedXml  = this.patchWorksheetXml(originalXml, patches);
+        unzipped[fullPath] = new TextEncoder().encode(patchedXml);
+      }
+
+      // ── 4. Re-zip and trigger download ────────────────────────────────────
+      const zipped = fflate.zipSync(unzipped, { level: 6 });
+      // Materialise into a guaranteed plain ArrayBuffer (no SharedArrayBuffer) for Blob.
+      const zippedBuffer = new Uint8Array(zipped).buffer as ArrayBuffer;
+      const blob   = new Blob(
+        [zippedBuffer],
+        { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+      );
+      const url    = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href     = url;
+      anchor.download  = `${fileName}.xlsx`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    }
+  }
+
+  /**
+   * Parses workbook.xml + workbook.xml.rels to build a map of
+   * sheet display-name → xl-relative file path (e.g. "worksheets/sheet1.xml").
+   */
+  private buildSheetPathMap(wbXml: string, wbRelsXml: string): Map<string, string> {
+    // Extract rId → target path from .rels
+    const ridToPath = new Map<string, string>();
+    const relsRe = /<Relationship[^>]+Id="([^"]+)"[^>]+Target="([^"]+)"/g;
+    let rm: RegExpExecArray | null;
+    while ((rm = relsRe.exec(wbRelsXml)) !== null) {
+      ridToPath.set(rm[1], rm[2]);
+    }
+
+    // Extract sheet name → rId from workbook.xml
+    const result = new Map<string, string>();
+    const sheetRe = /<sheet[^>]+name="([^"]+)"[^>]+r:id="([^"]+)"/g;
+    let sm: RegExpExecArray | null;
+    while ((sm = sheetRe.exec(wbXml)) !== null) {
+      const name = sm[1];
+      const rid  = sm[2];
+      const path = ridToPath.get(rid);
+      if (path) result.set(name, path);
+    }
+    return result;
+  }
+
+  /**
+   * Converts a 1-based column number to an Excel column letter (1 → "A", 26 → "Z", 27 → "AA").
+   */
+  private colNumToLetter(col: number): string {
+    let letter = '';
+    while (col > 0) {
+      const rem = (col - 1) % 26;
+      letter = String.fromCharCode(65 + rem) + letter;
+      col = Math.floor((col - 1) / 26);
+    }
+    return letter;
+  }
+
+  /**
+   * Surgically replaces <v> element values for the given cell addresses in
+   * worksheet XML.  Only touches <c r="ADDRESS"> nodes — everything else is
+   * returned byte-for-byte identical to the input.
+   *
+   * Strategy: split on <row ...> boundaries, then within each matching row
+   * replace only the targeted <c> nodes using a simple regex on the value tag.
+   */
+  private patchWorksheetXml(xml: string, patches: Map<string, number>): string {
+    if (!patches.size) return xml;
+
+    // Group patches by row number for fast row-level lookup
+    const byRow = new Map<number, Map<string, number>>();
+    for (const [ref, val] of patches) {
+      const m = ref.match(/^([A-Z]+)(\d+)$/);
+      if (!m) continue;
+      const rowNum = parseInt(m[2]);
+      if (!byRow.has(rowNum)) byRow.set(rowNum, new Map());
+      byRow.get(rowNum)!.set(ref, val);
+    }
+
+    // Replace row by row using a regex split on <row ...> ... </row> blocks
+    return xml.replace(
+      /(<row\b[^>]*>)(.*?)(<\/row>)/gs,
+      (fullMatch: string, openTag: string, rowBody: string, closeTag: string) => {
+        // Extract the row number from the <row r="N"> attribute
+        const rAttr = openTag.match(/\br="(\d+)"/);
+        if (!rAttr) return fullMatch;
+        const rowNum = parseInt(rAttr[1]);
+        const cellPatches = byRow.get(rowNum);
+        if (!cellPatches) return fullMatch;
+
+        // For each <c r="REF" ...> block in this row, patch the <v> if needed
+        const patchedBody = rowBody.replace(
+          /(<c\b[^>]*\br="([A-Z]+\d+)"[^>]*>)(.*?)(<\/c>)/gs,
+          (cm: string, cellOpen: string, cellRef: string, cellContent: string, cellClose: string) => {
+            const newVal = cellPatches.get(cellRef);
+            if (newVal === undefined) return cm;
+
+            // Remove existing <v>...</v> and <f>...</f> (formula), then insert new <v>
+            const stripped = cellContent
+              .replace(/<f\b[^>]*>.*?<\/f>/gs, '')
+              .replace(/<v>.*?<\/v>/gs, '');
+
+            // Ensure the cell type attribute is numeric (remove t="s"/t="str"/t="b" etc.)
+            const cleanOpen = cellOpen.replace(/\s+t="[^"]*"/, '');
+
+            return `${cleanOpen}${stripped}<v>${newVal}</v>${cellClose}`;
+          }
+        );
+
+        return `${openTag}${patchedBody}${closeTag}`;
+      }
+    );
   }
 
 }

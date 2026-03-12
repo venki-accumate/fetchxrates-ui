@@ -1,0 +1,103 @@
+<div class="um-page">
+
+  <div class="um-page-header">
+    <a class="um-back-btn" routerLink="/dashboard">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
+    <div class="um-page-title-group">
+      <mat-icon class="um-page-icon warn">bug_report</mat-icon>
+      <div>
+        <h1 class="um-page-title">Report an Issue</h1>
+        <p class="um-page-subtitle">Let us know about a bug, performance problem, or data issue</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="um-page-body um-page-body-narrow">
+
+    <ng-container *ngIf="status === 'success'">
+      <div class="um-success-state">
+        <div class="success-icon-wrap secondary">
+          <mat-icon>task_alt</mat-icon>
+        </div>
+        <h3>Issue reported successfully!</h3>
+        <p>Our support team will investigate and get back to you at the email on your account.</p>
+        <button class="um-btn um-btn-ghost" (click)="reset()">
+          <mat-icon>add</mat-icon>
+          Report another issue
+        </button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="status !== 'success'">
+      <div class="um-card">
+        <div class="um-form">
+
+          <div class="form-row-2">
+            <div class="um-form-group">
+              <label for="issue-category">Category</label>
+              <select id="issue-category" [(ngModel)]="form.category">
+                <option *ngFor="let opt of categoryOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </div>
+            <div class="um-form-group">
+              <label>Severity</label>
+              <div class="severity-pills">
+                <button *ngFor="let sev of severityOptions"
+                        type="button"
+                        class="sev-pill"
+                        [class]="sev.color"
+                        [class.sev-active]="form.severity === sev.value"
+                        (click)="form.severity = sev.value">
+                  {{ sev.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="um-form-group">
+            <label for="issue-title">Issue Title <span class="required-mark">*</span></label>
+            <input id="issue-title" type="text" [(ngModel)]="form.title" maxlength="120"
+              placeholder="Brief summary of the issue">
+          </div>
+
+          <div class="um-form-group">
+            <label for="issue-desc">
+              Description <span class="required-mark">*</span>
+              <span class="char-count">{{ form.description.length }} / 2000</span>
+            </label>
+            <textarea id="issue-desc" [(ngModel)]="form.description" maxlength="2000" rows="5"
+              placeholder="Describe what happened and what you expected to happen\u2026"></textarea>
+            <span class="field-hint" *ngIf="form.description.trim().length > 0 && form.description.trim().length < 20">
+              Please add more detail (min 20 characters)
+            </span>
+          </div>
+
+          <div class="um-form-group">
+            <label for="issue-steps">
+              Steps to Reproduce <span class="optional-mark">(optional)</span>
+            </label>
+            <textarea id="issue-steps" [(ngModel)]="form.stepsToReproduce" rows="4"
+              placeholder="1. Upload file&#10;2. Map columns&#10;3. Click Convert&#10;4. Error appears\u2026"></textarea>
+          </div>
+
+          <div class="um-error-banner" *ngIf="status === 'error'">
+            <mat-icon>error_outline</mat-icon>
+            Something went wrong. Please try again.
+          </div>
+
+          <div class="form-actions">
+            <button class="um-btn um-btn-secondary"
+                    (click)="submit()"
+                    [disabled]="!isValid || status === 'submitting'">
+              <mat-icon>{{ status === 'submitting' ? 'hourglass_top' : 'send' }}</mat-icon>
+              {{ status === 'submitting' ? 'Submitting\u2026' : 'Submit Report' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

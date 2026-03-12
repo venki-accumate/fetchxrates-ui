@@ -1,0 +1,99 @@
+<div class="um-page">
+
+  <div class="um-page-header">
+    <a class="um-back-btn" routerLink="/dashboard">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
+    <div class="um-page-title-group">
+      <mat-icon class="um-page-icon">receipt_long</mat-icon>
+      <div>
+        <h1 class="um-page-title">Billing &amp; Invoices</h1>
+        <p class="um-page-subtitle">Your payment history and downloadable invoices</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="um-page-body">
+
+    <ng-container *ngIf="!loading; else loadingTpl">
+
+      <!-- Error state -->
+      <div *ngIf="error" class="um-empty-state">
+        <mat-icon>error_outline</mat-icon>
+        <h4>Unable to load invoices</h4>
+        <p>{{ error }}</p>
+      </div>
+
+      <ng-container *ngIf="!error">
+
+        <!-- Summary bar -->
+        <div class="billing-summary" *ngIf="invoices.length > 0">
+          <div class="summary-card">
+            <mat-icon class="summary-icon accent">paid</mat-icon>
+            <div>
+              <span class="summary-label">Total Paid</span>
+              <span class="summary-value accent">{{ formatAmount(totalPaid, invoices[0].currency) }}</span>
+            </div>
+          </div>
+          <div class="summary-card">
+            <mat-icon class="summary-icon">receipt</mat-icon>
+            <div>
+              <span class="summary-label">Total Invoices</span>
+              <span class="summary-value">{{ invoices.length }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice table -->
+        <div class="um-card" *ngIf="invoices.length > 0">
+          <div class="invoice-table-wrap">
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Payment Date</th>
+                  <th class="text-right">Amount</th>
+                  <th class="text-center">Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let inv of invoices">
+                  <td class="inv-number">{{ inv.invoiceNumber ?? '—' }}</td>
+                  <td class="inv-date">{{ inv.created | date:'dd MMM yyyy' }}</td>
+                  <td class="inv-amount text-right">{{ formatAmount(inv.amountPaid, inv.currency) }}</td>
+                  <td class="text-center">
+                    <button class="pdf-link"
+                            (click)="downloadPdf(inv)"
+                            [disabled]="downloading === inv.id"
+                            [matTooltip]="'Download PDF'">
+                      <mat-icon>picture_as_pdf</mat-icon>
+                      {{ downloading === inv.id ? 'Generating…' : 'invoice.pdf' }}
+                    </button>
+                    <span *ngIf="!inv.invoicePdfUrl && downloading !== inv.id" class="pdf-na" style="display:none"></span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div *ngIf="invoices.length === 0" class="um-empty-state">
+          <mat-icon>receipt_long</mat-icon>
+          <h4>No invoices yet</h4>
+          <p>Your billing history will appear here once you have a paid subscription.</p>
+        </div>
+
+      </ng-container>
+    </ng-container>
+
+    <ng-template #loadingTpl>
+      <div class="um-loading">
+        <div class="um-spinner"></div>
+        <span>Loading invoices\u2026</span>
+      </div>
+    </ng-template>
+
+  </div>
+</div>
+

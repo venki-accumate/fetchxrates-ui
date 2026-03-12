@@ -35,22 +35,28 @@
                     </mat-panel-description>
                 </mat-expansion-panel-header>
 
-                <div *ngFor="let sheet of convertedData; let sheetIdx = index" class="sheet-section mb-4">
-                    <h5 class="sheet-title">Sheet: {{ sheet.sheetName }}</h5>
+                <!-- ── Shared sheet-body template (used by both single & multi wrappers) ── -->
+                <ng-template #sheetBody let-sheet let-sheetIdx="sheetIdx">
 
-                    <!-- Header Row + Confirmation buttons -->
-                    <div class="field-group">
+                    <!-- No amount fields notice -->
+                    <div *ngIf="!hasAmountFields(sheet)" class="no-amount-notice">
+                        <mat-icon>info_outline</mat-icon>
+                        No amount fields detected — no action required for this sheet.
+                    </div>
+
+                    <!-- Header Row + Confirmation buttons — only needed for sheets with amount fields -->
+                    <div class="field-group" *ngIf="hasAmountFields(sheet)">
                         <strong>Header Row:</strong> Row {{ sheet.headerRowIndex + 1 }}
                         <span *ngIf="sheet.metadata.length > 0" class="text-muted">
                             ({{ sheet.metadata.length }} row(s) of metadata detected above header)
                         </span>
-                        
-                    <!-- Headers chips — always visible -->
-                    <div class="field-group">
-                        <div class="header-chips">
-                            <span *ngFor="let header of sheet.headers" class="chip">{{ header }}</span>
+
+                        <!-- Headers chips -->
+                        <div class="field-group">
+                            <div class="header-chips">
+                                <span *ngFor="let header of sheet.headers" class="chip">{{ header }}</span>
+                            </div>
                         </div>
-                    </div>
 
                         <!-- Pending: show confirm/reject buttons -->
                         <div *ngIf="headerConfirmations[sheet.sheetName] == null" class="header-confirm-row">
@@ -71,8 +77,8 @@
                         </div>
                     </div>
 
-                    <!-- Header selector — shown when Incorrect is selected -->
-                    <div *ngIf="headerConfirmations[sheet.sheetName] === false" class="field-group header-selector">
+                    <!-- Header selector — shown when Incorrect is selected (amount sheets only) -->
+                    <div *ngIf="hasAmountFields(sheet) && headerConfirmations[sheet.sheetName] === false" class="field-group header-selector">
                         <strong>Select the correct header row:</strong>
                         <div class="candidate-rows">
                             <label *ngFor="let row of getCandidateRows(sheet); let i = index"
@@ -89,10 +95,10 @@
                         </button>
                     </div>
 
-                    <!-- Column Mapping Table — visible only after header confirmed -->
-                    <ng-container *ngIf="headerConfirmations[sheet.sheetName] === true">
+                    <!-- Column Mapping — only when header confirmed AND sheet has amount fields -->
+                    <ng-container *ngIf="headerConfirmations[sheet.sheetName] === true && hasAmountFields(sheet)">
 
-                        <!-- Banner: date value column detected — rates will come from it -->
+                        <!-- Banner: date value column detected -->
                         <ng-container *ngIf="getDateValueColumn(sheet) as dateCol">
                             <div class="date-column-notice">
                                 <mat-icon>info</mat-icon>
@@ -117,10 +123,8 @@
                                             [class.row-amount]="m.type === 'amount'"
                                             [class.row-date]="m.type === 'date'">
 
-                                            <!-- Column Name -->
                                             <td class="col-name">{{ m.columnName }}</td>
 
-                                            <!-- Type select -->
                                             <td class="col-type">
                                                 <select class="map-select type-select"
                                                         [(ngModel)]="m.type"
@@ -131,42 +135,33 @@
                                                 </select>
                                             </td>
 
-                                            <!-- Input column -->
                                             <td class="col-input">
-
-                                                <!-- No Action -->
                                                 <span *ngIf="m.type === 'none'" class="no-action-label">
                                                     <mat-icon class="na-icon">remove_circle_outline</mat-icon>
                                                     No action required
                                                 </span>
-
-                                                <!-- Amount: from → to currency -->
                                                 <div *ngIf="m.type === 'amount'" class="currency-input-row">
                                                     <select class="map-select currency-select"
                                                             [ngModel]="m.fromCurrency"
                                                             (ngModelChange)="onCurrencyChange(sheet, m, 'from', $event)">
                                                         <option value="" disabled>From</option>
-                                                        <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+                                                        <option *ngFor="let c of currencyService.codes()" [value]="c">{{ currencyService.label(c) }}</option>
                                                     </select>
                                                     <mat-icon class="arrow-icon">arrow_forward</mat-icon>
                                                     <select class="map-select currency-select"
                                                             [ngModel]="m.toCurrency"
                                                             (ngModelChange)="onCurrencyChange(sheet, m, 'to', $event)">
                                                         <option value="" disabled>To</option>
-                                                        <option *ngFor="let c of COMMON_CURRENCIES" [value]="c">{{ c }}</option>
+                                                        <option *ngFor="let c of currencyService.codes()" [value]="c">{{ currencyService.label(c) }}</option>
                                                     </select>
                                                 </div>
-
-                                                <!-- Date: daily rate / monthly average -->
                                                 <select *ngIf="m.type === 'date'" class="map-select date-select"
                                                         [(ngModel)]="m.dateRateType">
                                                     <option value="daily">Daily Rate</option>
                                                     <option value="monthly">Monthly Average</option>
                                                 </select>
-
                                             </td>
 
-                                            <!-- Use Exchange Rate Of — only when no date value column exists in data -->
                                             <td *ngIf="!getDateValueColumn(sheet)" class="col-exchange-rate">
                                                 <ng-container *ngIf="m.type === 'amount'">
                                                     <div class="period-picker">
@@ -196,19 +191,51 @@
                                     </tbody>
                                 </table>
                             </div>
-
-                            <!-- Confirmation checkbox -->
-                            <label class="mapping-confirm-label">
-                                <input type="checkbox"
-                                       [(ngModel)]="mappingConfirmed[sheet.sheetName]"
-                                       class="mapping-confirm-checkbox">
-                                I confirm all mapping details are correct
-                            </label>
                         </div>
 
                     </ng-container>
 
-                </div>
+                </ng-template>
+                <!-- ─────────────────────────────────────────────────────────── -->
+
+                <!-- Single sheet: flat div layout -->
+                <ng-container *ngIf="convertedData.length === 1">
+                    <div *ngFor="let sheet of convertedData; let sheetIdx = index" class="sheet-section">
+                        <h5 class="sheet-title" [class.sheet-title-no-amount]="!hasAmountFields(sheet)">
+                            Sheet: {{ sheet.sheetName }}
+                        </h5>
+                        <ng-container [ngTemplateOutlet]="sheetBody"
+                                      [ngTemplateOutletContext]="{$implicit: sheet, sheetIdx: sheetIdx}">
+                        </ng-container>
+                    </div>
+                </ng-container>
+
+                <!-- Multi sheet: inner expansion panels -->
+                <mat-accordion *ngIf="convertedData.length > 1" [multi]="true">
+                    <mat-expansion-panel
+                        *ngFor="let sheet of convertedData; let sheetIdx = index"
+                        class="sheet-inner-panel"
+                        [expanded]="sheetIdx === 0">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title [class.sheet-title-no-amount]="!hasAmountFields(sheet)">
+                                <mat-icon class="panel-icon">{{ hasAmountFields(sheet) ? 'table_rows' : 'warning_amber' }}</mat-icon>
+                                Sheet: {{ sheet.sheetName }}
+                                <span *ngIf="!hasAmountFields(sheet)" class="no-amount-badge">No action required</span>
+                            </mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <ng-container [ngTemplateOutlet]="sheetBody"
+                                      [ngTemplateOutletContext]="{$implicit: sheet, sheetIdx: sheetIdx}">
+                        </ng-container>
+                    </mat-expansion-panel>
+                </mat-accordion>
+
+                <!-- Single "I confirm" checkbox — one for all sheets -->
+                <label class="mapping-confirm-label global-confirm">
+                    <input type="checkbox"
+                           [(ngModel)]="allMappingsConfirmed"
+                           class="mapping-confirm-checkbox">
+                    I confirm all mapping details are correct
+                </label>
 
             </mat-expansion-panel>
 
@@ -224,17 +251,35 @@
                     </mat-panel-description>
                 </mat-expansion-panel-header>
 
-                <div *ngFor="let sheet of convertedData" class="sheet-preview">
-                    <div *ngIf="convertedData.length > 1" class="sheet-preview-title">
-                        <mat-icon>grid_on</mat-icon>
-                        <span>{{ sheet.sheetName }}</span>
-                        <span class="row-count">{{ sheet.data.length }} rows</span>
+                <!-- Single sheet: flat table -->
+                <ng-container *ngIf="convertedData.length <= 1">
+                    <div *ngFor="let sheet of convertedData" class="sheet-preview">
+                        <app-data-table
+                            [columnHeaders]="sheet.headers"
+                            [dataSource]="getSheetTableData(sheet)">
+                        </app-data-table>
                     </div>
-                    <app-data-table
-                        [columnHeaders]="sheet.headers"
-                        [dataSource]="getSheetTableData(sheet)">
-                    </app-data-table>
-                </div>
+                </ng-container>
+
+                <!-- Multi sheet: inner expansion panels -->
+                <mat-accordion *ngIf="convertedData.length > 1" [multi]="true">
+                    <mat-expansion-panel
+                        *ngFor="let sheet of convertedData; let i = index"
+                        class="sheet-inner-panel"
+                        [expanded]="i === 0">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                <mat-icon class="panel-icon">grid_on</mat-icon>
+                                {{ sheet.sheetName }}
+                            </mat-panel-title>
+                            <mat-panel-description>{{ sheet.data.length }} rows</mat-panel-description>
+                        </mat-expansion-panel-header>
+                        <app-data-table
+                            [columnHeaders]="sheet.headers"
+                            [dataSource]="getSheetTableData(sheet)">
+                        </app-data-table>
+                    </mat-expansion-panel>
+                </mat-accordion>
 
             </mat-expansion-panel>
 
@@ -248,22 +293,49 @@
                     <mat-panel-description>
                         {{ convertedSheets[0]?.data?.length || 0 }} rows &mdash; exchange rates applied
                     </mat-panel-description>
+                    <button mat-icon-button
+                            class="header-download-btn"
+                            (click)="$event.stopPropagation(); downloadConvertedExcel()"
+                            matTooltip="Download converted Excel"
+                            aria-label="Download Excel">
+                        <mat-icon>download</mat-icon>
+                    </button>
                 </mat-expansion-panel-header>
 
-                <div *ngFor="let sheet of convertedSheets" class="sheet-preview">
-                    <div *ngIf="convertedSheets.length > 1" class="sheet-preview-title">
-                        <mat-icon>grid_on</mat-icon>
-                        <span>{{ sheet.sheetName }}</span>
-                        <span class="row-count">{{ sheet.data.length }} rows</span>
+                <!-- Single sheet: flat table -->
+                <ng-container *ngIf="convertedSheets.length <= 1">
+                    <div *ngFor="let sheet of convertedSheets" class="sheet-preview">
+                        <app-data-table
+                            [columnHeaders]="sheet.headers"
+                            [dataSource]="getSheetTableData(sheet)">
+                        </app-data-table>
                     </div>
-                    <app-data-table
-                        [columnHeaders]="sheet.headers"
-                        [dataSource]="getSheetTableData(sheet)">
-                    </app-data-table>
-                </div>
+                </ng-container>
+
+                <!-- Multi sheet: inner expansion panels -->
+                <mat-accordion *ngIf="convertedSheets.length > 1" [multi]="true">
+                    <mat-expansion-panel
+                        *ngFor="let sheet of convertedSheets; let i = index"
+                        class="sheet-inner-panel"
+                        [expanded]="i === 0">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                <mat-icon class="panel-icon">grid_on</mat-icon>
+                                {{ sheet.sheetName }}
+                            </mat-panel-title>
+                            <mat-panel-description>{{ sheet.data.length }} rows</mat-panel-description>
+                        </mat-expansion-panel-header>
+                        <app-data-table
+                            [columnHeaders]="sheet.headers"
+                            [dataSource]="getSheetTableData(sheet)">
+                        </app-data-table>
+                    </mat-expansion-panel>
+                </mat-accordion>
 
             </mat-expansion-panel>
         </mat-accordion>
     </div>
 </div>
 <app-button-bar (action)="handleAction($event)" [config]="buttonConfig"></app-button-bar>
+
+<app-excel-report #excelReport style="display:none"></app-excel-report>

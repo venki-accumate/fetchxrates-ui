@@ -13,9 +13,9 @@ import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { ButtonBarComponent } from '../../../components/button-bar/button-bar.component';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 import { FetchXRApiService, UserSchedule } from '../../../services/fetchXR-api.service';
-import { UserServiceService } from '../../../services/user-service.service';
 import { AuthStateService } from '../../../services/auth-state.service';
 import { EventBusService } from '../../../services/event-bus.service';
+import { CurrencyService } from '../../../services/currency.service';
 
 @Component({
   selector: 'app-user-scheduling',
@@ -38,17 +38,11 @@ import { EventBusService } from '../../../services/event-bus.service';
 export class UserSchedulingComponent implements OnInit {
   constructor(
     private fetchXRApiService: FetchXRApiService,
-    private userService: UserServiceService,
     private authState: AuthStateService,
     private eventBus: EventBusService,
-    private spinner: NgxSpinnerService
+    private spinner: NgxSpinnerService,
+    readonly currencyService: CurrencyService
   ) {}
-
-  readonly COMMON_CURRENCIES = [
-    'AUD', 'BRL', 'CAD', 'CHF', 'CNY', 'EUR', 'GBP', 'HKD', 'IDR', 'INR',
-    'JPY', 'KRW', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'RUB', 'SAR',
-    'SEK', 'SGD', 'THB', 'TRY', 'TWD', 'USD', 'ZAR'
-  ];
 
   readonly FREQUENCIES = [
     { value: 'daily',   label: 'Daily'   },
@@ -71,7 +65,7 @@ export class UserSchedulingComponent implements OnInit {
   // ── Form state ────────────────────────────────────────────────────────────
   frequency: 'daily' | 'weekly' | 'monthly' = 'daily';
   fromCurrency = '';
-  availableToCurrencies = [...this.COMMON_CURRENCIES];
+  availableToCurrencies: string[] = [];
   selectedToCurrencies: string[] = [];
   deliveryFormat: 'excel' | 'csv' | 'pdf' | 'email_table' = 'excel';
   showStatistics = false;
@@ -86,7 +80,11 @@ export class UserSchedulingComponent implements OnInit {
   pendingSchedules = signal<UserSchedule[]>([]);
   hasUnsavedChanges = signal(false);
   validationError   = signal('');
+  formPanelOpen      = signal(true);
+  schedulesPanelOpen = signal(true);
   isLoading = false;
+
+  currencies: Record<string, string> = {};
 
   scheduleTableSource = new MatTableDataSource<UserSchedule>([]);
 
@@ -97,22 +95,27 @@ export class UserSchedulingComponent implements OnInit {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
+    this.currencyService.load().then(() => {
+      this.availableToCurrencies = [...this.currencyService.codes()];
+      this.currencies = Object.fromEntries(
+        this.currencyService.codes().map(c => [c, this.currencyService.label(c)])
+      );
+    });
     const userData     = this.authState.getUserData();
-    const hasSchedules = userData?.hasScheduling === true
-      || this.userService.userObject?.hasScheduling === true;
+    const hasSchedules = userData?.hasScheduling === true;
 
     this.hasScheduling.set(hasSchedules);
     if (hasSchedules) this.loadSchedules();
   }
 
   private loadSchedules(): void {
-    const userId = this.userService.userObject?.userId;
-    if (!userId) return;
+    const email = this.getUserEmail();
+    if (!email) return;
 
     this.isLoading = true;
     this.spinner.show();
 
-    this.fetchXRApiService.getSchedules(userId).subscribe({
+    this.fetchXRApiService.getSchedules(email).subscribe({
       next: (schedules) => {
         const list = schedules ?? [];
         this.pendingSchedules.set(list);
@@ -239,7 +242,7 @@ export class UserSchedulingComponent implements OnInit {
     this.frequency           = schedule.frequency;
     this.fromCurrency        = schedule.fromCurrency;
     this.selectedToCurrencies  = [...schedule.toCurrencies];
-    this.availableToCurrencies = this.COMMON_CURRENCIES.filter(c => !schedule.toCurrencies.includes(c));
+    this.availableToCurrencies = this.currencyService.codes().filter(c => !schedule.toCurrencies.includes(c));
     this.deliveryFormat      = schedule.deliveryFormat;
     this.showStatistics      = schedule.showStatistics;
     this.emailRecipientsInput = schedule.additionalRecipients.join(', ');
@@ -270,30 +273,30 @@ export class UserSchedulingComponent implements OnInit {
       }
     }
 
-    const userId = this.userService.userObject?.userId;
-    if (!userId) {
+    const email = this.getUserEmail();
+    if (!email) {
       this.eventBus.showError('User session not found. Please log in again.');
       return;
     }
+    console.log('Saving schedules for user:', email, this.pendingSchedules());
 
     const wasFirstSchedule = !this.hasScheduling();
     this.isLoading = true;
     this.spinner.show();
     this.buttonConfig = { left: { label: 'Reset' }, right: { label: 'Saving…', disabled: true } };
-
-    this.fetchXRApiService.saveSchedules(userId, this.pendingSchedules()).subscribe({
+    this.fetchXRApiService.saveSchedules(email, this.pendingSchedules(), wasFirstSchedule).subscribe({
       next: () => {
         if (wasFirstSchedule) {
           this.hasScheduling.set(true);
-          this.userService.setHasScheduling(true);
           const userData    = this.authState.getUserData() ?? {};
           const updatedUser = { ...userData, hasScheduling: true };
           this.authState.setUserData(updatedUser);
-          this.fetchXRApiService.saveUserData(updatedUser).subscribe();
         }
         this.scheduleTableSource.data = this.pendingSchedules();
         this.hasUnsavedChanges.set(false);
         this.resetForm();
+        this.formPanelOpen.set(false);
+        this.schedulesPanelOpen.set(true);
         this.isLoading = false;
         this.spinner.hide();
         this.buttonConfig = { left: { label: 'Reset' }, right: { label: 'Save Schedule', disabled: false } };
@@ -313,7 +316,7 @@ export class UserSchedulingComponent implements OnInit {
   private resetForm(): void {
     this.frequency           = 'daily';
     this.fromCurrency        = '';
-    this.availableToCurrencies = [...this.COMMON_CURRENCIES];
+    this.availableToCurrencies = [...this.currencyService.codes()];
     this.selectedToCurrencies  = [];
     this.deliveryFormat      = 'excel';
     this.showStatistics      = false;

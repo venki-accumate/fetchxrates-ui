@@ -1,0 +1,224 @@
+// Billing-specific styles — base .um-* classes are in styles.scss
+
+.billing-summary {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  .summary-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.125rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    flex: 1;
+    min-width: 140px;
+
+    .summary-icon {
+      font-size: 1.4rem;
+      width: 1.4rem;
+      height: 1.4rem;
+      flex-shrink: 0;
+      color: var(--text-muted);
+
+      &.accent { color: var(--accent); }
+      &.warning { color: #f59e0b; }
+    }
+
+    .summary-label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .summary-value {
+      display: block;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+
+      &.accent  { color: var(--accent); }
+      &.warning { color: #f59e0b; }
+    }
+  }
+}
+
+// Invoice table
+.invoice-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  thead {
+    background: var(--bg-secondary);
+
+    th {
+      padding: 0.625rem 0.875rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+
+      &.text-right  { text-align: right; }
+      &.text-center { text-align: center; }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: var(--bg-secondary); }
+
+    td {
+      padding: 0.75rem 0.875rem;
+      color: var(--text-primary);
+      vertical-align: middle;
+
+      &.text-right  { text-align: right; }
+      &.text-center { text-align: center; }
+    }
+  }
+
+  .inv-number {
+    font-weight: 600;
+    color: var(--accent-secondary);
+    font-family: monospace;
+    font-size: 0.8rem;
+  }
+
+  .inv-date {
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .inv-desc {
+    color: var(--text-secondary);
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .inv-amount {
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+}
+
+// Status badges
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+
+  &.status-paid {
+    background: rgba(34, 183, 27, 0.12);
+    color: var(--accent);
+    border: 1px solid rgba(34, 183, 27, 0.3);
+  }
+
+  &.status-pending {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+  }
+
+  &.status-failed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+}
+
+// Per-row download button (kept for backwards compat)
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--accent-secondary);
+  transition: all 0.2s;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--accent-secondary);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    color: var(--text-muted);
+  }
+}
+
+// PDF download button in Download column
+.pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #ef4444;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+}
+
+.pdf-na {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
