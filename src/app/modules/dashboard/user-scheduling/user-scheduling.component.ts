@@ -13,7 +13,6 @@ import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { ButtonBarComponent } from '../../../components/button-bar/button-bar.component';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 import { FetchXRApiService, UserSchedule } from '../../../services/fetchXR-api.service';
-import { UserServiceService } from '../../../services/user-service.service';
 import { AuthStateService } from '../../../services/auth-state.service';
 import { EventBusService } from '../../../services/event-bus.service';
 import { CurrencyService } from '../../../services/currency.service';
@@ -39,7 +38,6 @@ import { CurrencyService } from '../../../services/currency.service';
 export class UserSchedulingComponent implements OnInit {
   constructor(
     private fetchXRApiService: FetchXRApiService,
-    private userService: UserServiceService,
     private authState: AuthStateService,
     private eventBus: EventBusService,
     private spinner: NgxSpinnerService,
@@ -104,8 +102,7 @@ export class UserSchedulingComponent implements OnInit {
       );
     });
     const userData     = this.authState.getUserData();
-    const hasSchedules = userData?.hasScheduling === true
-      || this.userService.userObject?.hasScheduling === true;
+    const hasSchedules = userData?.hasScheduling === true;
 
     this.hasScheduling.set(hasSchedules);
     if (hasSchedules) this.loadSchedules();
@@ -291,7 +288,6 @@ export class UserSchedulingComponent implements OnInit {
       next: () => {
         if (wasFirstSchedule) {
           this.hasScheduling.set(true);
-          this.userService.setHasScheduling(true);
           const userData    = this.authState.getUserData() ?? {};
           const updatedUser = { ...userData, hasScheduling: true };
           this.authState.setUserData(updatedUser);

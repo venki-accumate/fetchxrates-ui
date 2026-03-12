@@ -1,9 +1,41 @@
-  import { Injectable } from '@angular/core';
-  import { BehaviorSubject, Observable } from 'rxjs';
-  import { fetchAuthSession, getCurrentUser, signOut } from 'aws-amplify/auth';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { fetchAuthSession, getCurrentUser, signOut } from 'aws-amplify/auth';
 
-  @Injectable({ providedIn: 'root' })
-  export class AuthStateService {
+export interface SubscriptionData {
+  status: string;
+  planStatus: string;
+  substatus: string;
+  startedAt: string | null;
+  currentPeriodEnd: string | null;
+  nextBillingDate: string | null;
+  cancelAtPeriodEnd: boolean;
+}
+
+export interface StripeData {
+  customerId: string | null;
+  subscriptionId: string | null;
+  sessionId: string | null;
+  paymentIntentId: string | null;
+}
+
+export interface UserData {
+  userId: string;
+  email: string;
+  emailHash: string;
+  firstName: string;
+  lastName: string;
+  company: string;
+  createdAt: string;
+  lastUpdate: number;
+  homePage: string;
+  hasScheduling: boolean;
+  subscription?: SubscriptionData;
+  stripe?: StripeData;
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthStateService {
     private userSubject = new BehaviorSubject<any | null>(null);
     private userDataSubject = new BehaviorSubject<any | null>(null);
     private newUserSubject = new BehaviorSubject<boolean>(false);
@@ -86,36 +118,6 @@
     }
 
     /**
-     * Refresh userData from API
-     * @param userId Optional userId, uses current user if not provided
-     * @returns Observable of userData
-     */
-    refreshUserData(userId?: string): any {
-      const user = this.userSubject.value;
-      const effectiveUserId = userId || user?.userId;
-
-      if (!effectiveUserId) {
-        throw new Error('No user ID available for refreshing user data');
-      }
-
-     /* return new Observable(observer => {
-        this.finApiService.getUserStoreObject(effectiveUserId, 'userSetup').subscribe({
-          next: (data: any) => {
-            const userData = data ?? {};
-            this.userDataSubject.next(userData);
-            observer.next(userData);
-            observer.complete();
-          },
-          error: (err) => {
-            console.error('Error refreshing user data:', err);
-            observer.error(err);
-          }
-        });
-      });*/
-      return null;
-    }
-
-    /**
      * Clear user and userData on logout
      */
     async clearAuth(): Promise<void> {
@@ -153,13 +155,13 @@
 
     /**
      * Check if user has an active subscription.
-     * Source of truth: status + substatus fields written by the Stripe webhook.
+     * Source of truth: subscription.status + subscription.substatus written by the Stripe webhook.
      */
     hasActiveSubscription(): boolean {
-      const userData = this.userDataSubject.value;
+      const userData = this.userDataSubject.value as UserData | null;
       return (
-        userData?.status === 'active' &&
-        userData?.substatus === 'subscription_created_active'
+        userData?.subscription?.status === 'active' &&
+        userData?.subscription?.substatus === 'subscription_created_active'
       );
     }
   }

@@ -120,7 +120,7 @@ export class StripeSuccessComponent implements OnInit, OnDestroy {
       const userData = await firstValueFrom(this.apiService.getUserData(emailHash));
       this.authState.setUserData(userData);
 
-      if (userData.status === 'active' && userData.substatus === 'subscription_created_active') {
+      if (userData.subscription?.status === 'active' && userData.subscription?.substatus === 'subscription_created_active') {
         const homePage = userData.homePage || '/dashboard';
         this.clearTimers();
         this.router.navigate([homePage]);

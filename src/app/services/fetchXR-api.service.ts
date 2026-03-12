@@ -43,6 +43,22 @@ export interface UserSchedule {
   updatedAt: string;
 }
 
+export interface InvoiceRecord {
+  id: string;
+  stripeInvoiceId: string;
+  invoiceNumber: string | null;
+  amountPaid: number;
+  currency: string;
+  created: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  description: string | null;
+  hostedInvoiceUrl: string | null;
+  invoicePdfUrl: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -162,6 +178,16 @@ export class FetchXRApiService {
     return this.http.post<any>(
       `${this.apiUrl}/scheduling-manager/schedules`,
       { email, schedules, updateUser }
+    );
+  }
+
+  /**
+   * GET /invoice-manager/:emailHash
+   * Returns the invoices array for the given user.
+   */
+  getInvoices(emailHash: string): Observable<InvoiceRecord[]> {
+    return this.http.get<InvoiceRecord[]>(
+      `${this.apiUrl}/invoice-manager/${emailHash}`
     );
   }
 

@@ -152,7 +152,7 @@
   }
 }
 
-// Per-row download button
+// Per-row download button (kept for backwards compat)
 .download-btn {
   display: inline-flex;
   align-items: center;
@@ -182,4 +182,43 @@
     cursor: not-allowed;
     color: var(--text-muted);
   }
+}
+
+// PDF download button in Download column
+.pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--accent-secondary);
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #ef4444;
+    flex-shrink: 0;
+  }
+
+  &:hover:not(:disabled) {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: wait;
+  }
+}
+
+.pdf-na {
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }

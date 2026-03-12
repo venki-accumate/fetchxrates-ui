@@ -74,7 +74,6 @@ export class CheckinComponent implements OnInit {
           lastName,
           company: '',
           userId: user.userId || null,
-          subscription: 'Inactive',
           homePage: '/dashboard',
           createdAt: new Date().toISOString(),
         };
@@ -103,10 +102,10 @@ export class CheckinComponent implements OnInit {
 
   private userExists(userData: any): void {
     this.authState.setUserData(userData);
-    if (userData.status === 'active' && userData.substatus === 'subscription_created_active') {
+    if (userData.subscription?.status === 'active' && userData.subscription?.substatus === 'subscription_created_active') {
       this.router.navigate([userData.homePage || '/dashboard']);
       return;
-    } else if (userData.stripePaymentSessionId && userData.paymentSucceededPendingActivation) {
+    } else if (userData.stripe?.paymentSucceededPendingActivation) {
       this.router.navigate(['/payment-success']);
       return;
     }

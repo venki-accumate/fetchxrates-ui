@@ -2,7 +2,7 @@
   <div class="dashboard-header">
     <h1>Dashboard</h1>
     <div class="user-info" *ngIf="currentUser">
-      <span>Welcome, {{ currentUser?.name }}</span>
+      <span>Welcome, {{ currentUser?.givenName || currentUser?.email }}</span>
     </div>
   </div>
 
@@ -14,11 +14,11 @@
       </div>
       <div class="stat-card">
         <h3>Subscription Status</h3>
-        <p class="stat-value">{{ currentUser?.subscriptionStatus }}</p>
+        <p class="stat-value">{{ currentUserData?.subscription?.status }}</p>
       </div>
       <div class="stat-card">
         <h3>Current Plan</h3>
-        <p class="stat-value">{{ currentUser?.subscriptionPlan }}</p>
+        <p class="stat-value">{{ currentUserData?.subscription?.planStatus }}</p>
       </div>
       <div class="stat-card">
         <h3>API Key</h3>
