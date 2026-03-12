@@ -153,7 +153,6 @@ export class PricingComponent implements OnInit {
       lastName: this.userData.lastName,
       company: this.userData.company || '',
       userId: user?.userId || null,
-      subscription: 'Inactive',
       homePage: '/dashboard',
       createdAt: new Date().toISOString()
     };

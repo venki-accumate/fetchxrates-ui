@@ -102,10 +102,11 @@ export class CheckinComponent implements OnInit {
 
   private userExists(userData: any): void {
     this.authState.setUserData(userData);
-    if (userData.subscription?.status === 'active' && userData.subscription?.substatus === 'subscription_created_active') {
+    if (userData.subscription?.status === 'active' && userData.subscription?.substatus === 'payment_succeeded') {
       this.router.navigate([userData.homePage || '/dashboard']);
+      console.log(userData.homePage, userData.subscription?.status, userData.subscription?.substatus);
       return;
-    } else if (userData.stripe?.paymentSucceededPendingActivation) {
+    } else if (userData.subscription?.paymentSucceededPendingActivation) {
       this.router.navigate(['/payment-success']);
       return;
     }

@@ -161,7 +161,7 @@ export class AuthStateService {
       const userData = this.userDataSubject.value as UserData | null;
       return (
         userData?.subscription?.status === 'active' &&
-        userData?.subscription?.substatus === 'subscription_created_active'
+        userData?.subscription?.substatus === 'payment_succeeded'
       );
     }
   }
