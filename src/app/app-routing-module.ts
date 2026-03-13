@@ -51,6 +51,13 @@ const routes: Routes = [
         .then(m => m.UserManagementModule)
   },
   {
+    path: 'error',
+    loadComponent: () =>
+      import('./components/something-went-wrong/something-went-wrong.component')
+        .then(c => c.SomethingWentWrongComponent),
+    data: { hideMenuItems: true }
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

@@ -1,0 +1,27 @@
+<div class="oops-wrap">
+
+  <img
+    src="oops.png"
+    alt="Oops — something went wrong"
+    class="oops-image"
+  />
+
+  <div class="oops-content">
+    <h1 class="oops-title">Oops! Something went wrong</h1>
+    <p class="oops-subtitle">
+      We're having trouble reaching our servers right now.<br />
+      This is usually temporary — please try again in a moment.
+    </p>
+
+    <div class="oops-actions">
+      <button class="btn-primary" (click)="retry()">Try Again</button>
+      <button class="btn-secondary" (click)="goHome()">Go to Dashboard</button>
+      <button class="btn-secondary" (click)="signOut()">Sign Out</button>
+    </div>
+
+    <p class="oops-hint">
+      If the problem persists, contact
+      <a href="mailto:support@fetchxrates.com">support&#64;fetchxrates.com</a>.
+    </p>
+  </div>
+</div>

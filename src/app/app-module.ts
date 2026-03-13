@@ -10,6 +10,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppRoutingModule } from './app-routing-module';
 import { AppComponent } from './app';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { BackendStatusInterceptor } from './interceptors/backend-status.interceptor';
 import { SessionModalComponent } from './components/session-modal/session-modal.component';
 import { MenuComponent } from './components/menu/menu.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
@@ -85,6 +86,11 @@ Amplify.configure({
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: BackendStatusInterceptor,
       multi: true
     }
   ],
