@@ -86,7 +86,7 @@ export class UserManagementService {
       name,
       email: userData?.email || user?.email || '',
       userId: userData?.userId || user?.userId || '',
-      plan: sub?.planStatus || (sub?.status === 'active' ? 'Pro' : 'Free'),
+      plan: sub?.planName?.replaceAll(/_/g, ' ') || (sub?.status === 'active' ? 'Pro' : 'Free'),
       nextRenewalDate: sub?.nextBillingDate ?? sub?.currentPeriodEnd ?? null,
       lastPaymentDate: sub?.startedAt ?? null,
       createdAt: userData?.createdAt,

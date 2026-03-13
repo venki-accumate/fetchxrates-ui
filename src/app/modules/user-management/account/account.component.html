@@ -47,7 +47,7 @@
           <mat-icon class="info-icon">event_repeat</mat-icon>
           <div class="info-content">
             <span class="info-label">Next Renewal</span>
-            <span class="info-value">{{ profile?.nextRenewalDate || 'Not available' }}</span>
+            <span class="info-value">{{ (profile?.nextRenewalDate | date:'mediumDate') || 'Not available' }}</span>
           </div>
         </div>
         <div class="info-card">
