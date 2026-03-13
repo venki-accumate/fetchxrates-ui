@@ -1,13 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { firstValueFrom } from 'rxjs';
 import {
   UserManagementService,
   FeedbackPayload,
   SubmitStatus,
 } from '../../../services/user-management.service';
+import { AuthStateService } from '../../../services/auth-state.service';
+import { NgxSpinnerService } from 'ngx-spinner';
+
+type SupportMeta = import('../../../services/user-management.service').SupportMeta;
+type FeedbackForm = Omit<FeedbackPayload, keyof SupportMeta>;
 
 @Component({
   selector: 'app-feedback',
@@ -17,9 +23,9 @@ import {
   styleUrls: ['./feedback.component.scss'],
 })
 export class FeedbackComponent {
-  form: FeedbackPayload = { type: 'general', rating: 0, message: '' };
-  status: SubmitStatus = 'idle';
-  hoverRating = 0;
+  private readonly userMgmtService = inject(UserManagementService);
+  private readonly authState = inject(AuthStateService);
+  private readonly spinner = inject(NgxSpinnerService);
 
   readonly typeOptions = [
     { value: 'general', label: 'General Feedback' },
@@ -30,36 +36,70 @@ export class FeedbackComponent {
 
   readonly stars = [1, 2, 3, 4, 5];
 
-  constructor(
-    private router: Router,
-    private userMgmtService: UserManagementService
-  ) {}
+  readonly form = signal<FeedbackForm>({
+    type: 'general',
+    rating: 0,
+    message: '',
+  });
 
-  setRating(n: number): void {
-    this.form.rating = n;
+  readonly status = signal<SubmitStatus>('idle');
+  readonly hoverRating = signal(0);
+  readonly isSubmitting = signal(false);
+
+  readonly isValid = computed(() => {
+    const form = this.form();
+    return form.rating > 0 && form.message.trim().length >= 10;
+  });
+
+  setType(type: FeedbackForm['type']): void {
+    this.form.update(form => ({ ...form, type }));
+  }
+
+  setMessage(message: string): void {
+    this.form.update(form => ({ ...form, message }));
+  }
+
+  setRating(rating: number): void {
+    this.form.update(form => ({ ...form, rating }));
+  }
+
+  setHoverRating(rating: number): void {
+    this.hoverRating.set(rating);
   }
 
   starFilled(n: number): boolean {
-    return n <= (this.hoverRating || this.form.rating);
-  }
-
-  get isValid(): boolean {
-    return this.form.rating > 0 && this.form.message.trim().length >= 10;
+    return n <= (this.hoverRating() || this.form().rating);
   }
 
   async submit(): Promise<void> {
-    if (!this.isValid || this.status === 'submitting') return;
-    this.status = 'submitting';
+    if (!this.isValid() || this.isSubmitting()) return;
+
+    this.isSubmitting.set(true);
+    this.status.set('idle');
+    this.spinner.show();
+
     try {
-      await this.userMgmtService.submitFeedback(this.form);
-      this.status = 'success';
-    } catch {
-      this.status = 'error';
+      const meta = await this.userMgmtService.buildSupportMeta(this.authState);
+      const payload: FeedbackPayload = { ...this.form(), ...meta };
+      const response = await firstValueFrom(this.userMgmtService.submitFeedback(payload));
+
+      this.status.set(response?.success ? 'success' : 'error');
+    } catch (error) {
+      this.status.set('error');
+      console.error('Failed to submit feedback', error);
+    } finally {
+      this.spinner.hide();
+      this.isSubmitting.set(false);
     }
   }
 
   reset(): void {
-    this.form = { type: 'general', rating: 0, message: '' };
-    this.status = 'idle';
+    this.form.set({
+      type: 'general',
+      rating: 0,
+      message: '',
+    });
+    this.hoverRating.set(0);
+    this.status.set('idle');
   }
 }

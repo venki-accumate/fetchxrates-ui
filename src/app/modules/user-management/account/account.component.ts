@@ -3,15 +3,17 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
 import {
   UserManagementService,
   UserProfile,
 } from '../../../services/user-management.service';
+import { AuthStateService } from '../../../services/auth-state.service';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, MatTooltipModule],
+  imports: [CommonModule, RouterModule, MatIconModule, MatTooltipModule, NgxSpinnerModule],
   templateUrl: './account.component.html',
   styleUrls: ['./account.component.scss'],
 })
@@ -22,12 +24,19 @@ export class AccountComponent implements OnInit {
 
   constructor(
     private router: Router,
-    private userMgmtService: UserManagementService
+    private userMgmtService: UserManagementService,
+    private authState: AuthStateService,
+    private spinner: NgxSpinnerService
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.profile = await this.userMgmtService.loadUserProfile();
-    this.loading = false;
+    this.spinner.show();
+    try {
+      this.profile = await this.userMgmtService.loadUserProfile(this.authState);
+    } finally {
+      this.loading = false;
+      this.spinner.hide();
+    }
   }
 
   async manageSubscription(action: 'upgrade' | 'cancel'): Promise<void> {

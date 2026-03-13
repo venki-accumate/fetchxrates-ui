@@ -49,6 +49,82 @@
   }
 }
 
+// ── Filter bar (matches .data-table pattern) ──────────────────────────────────
+.dt-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 0.5rem;
+  flex-wrap: wrap;
+
+  .dt-filter-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.35rem 0.6rem;
+    flex: 1;
+    max-width: 380px;
+
+    .dt-filter-icon {
+      font-size: 1.1rem;
+      width: 1.1rem;
+      height: 1.1rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .dt-filter-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.85rem;
+      color: var(--text-primary);
+
+      &::placeholder { color: var(--text-muted); }
+    }
+
+    .dt-filter-clear {
+      display: flex;
+      align-items: center;
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--text-muted);
+      line-height: 1;
+
+      mat-icon { font-size: 1rem; width: 1rem; height: 1rem; }
+      &:hover { color: var(--text-primary); }
+    }
+  }
+
+  .dt-filter-count {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+}
+
+.dt-no-results {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 1.5rem;
+  font-size: 0.875rem;
+
+  mat-icon {
+    vertical-align: middle;
+    margin-right: 0.3rem;
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
 // Invoice table
 .invoice-table-wrap {
   overflow-x: auto;

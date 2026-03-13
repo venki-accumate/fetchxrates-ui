@@ -182,3 +182,16 @@
     flex-wrap: wrap;
   }
 }
+
+.subscription-actions {
+  display: flex;
+  gap: 2rem;
+}
+
+.white {
+  color: white !important;
+}
+
+.red {
+  color: var(--danger, #ef4444) !important;
+}

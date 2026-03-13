@@ -129,6 +129,8 @@ export class AuthStateService {
         this.userSubject.next(null);
         this.userDataSubject.next(null);
         this.newUserSubject.next(false);
+        sessionStorage.removeItem('userData');
+        sessionStorage.removeItem('intendedUrl');
       }
     }
 

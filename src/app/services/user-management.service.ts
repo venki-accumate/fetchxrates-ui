@@ -1,5 +1,8 @@
 import { Injectable, signal } from '@angular/core';
-import { fetchAuthSession } from '@aws-amplify/auth';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom, Observable } from 'rxjs';
+import { AuthStateService } from './auth-state.service';
+import { environment } from '../../environments/environment';
 
 // ─── Models ──────────────────────────────────────────────────────────────────
 
@@ -11,6 +14,7 @@ export interface UserProfile {
   plan: string;
   nextRenewalDate: string | null;
   lastPaymentDate: string | null;
+  createdAt?: string;
 }
 
 export interface Invoice {
@@ -25,13 +29,24 @@ export interface Invoice {
   downloadUrl?: string;
 }
 
-export interface FeedbackPayload {
+/** Metadata automatically appended to every support submission */
+export interface SupportMeta {
+  email: string;
+  userName: string;
+  userId: string;
+  userTime: string;      // ISO local datetime
+  utcTime: string;       // UTC datetime string
+  browserAgent: string;
+  locale: string;
+}
+
+export interface FeedbackPayload extends SupportMeta {
   type: 'general' | 'feature-request' | 'praise' | 'other';
   rating: number; // 1–5
   message: string;
 }
 
-export interface IssuePayload {
+export interface IssuePayload extends SupportMeta {
   category: 'bug' | 'performance' | 'data-issue' | 'billing' | 'other';
   severity: 'low' | 'medium' | 'high' | 'critical';
   title: string;
@@ -48,54 +63,37 @@ export class UserManagementService {
   private _profile = signal<UserProfile | null>(null);
   readonly profile = this._profile.asReadonly();
 
+  constructor(private http: HttpClient) {}
+
   // ── Profile ──────────────────────────────────────────────────────────────
 
-  /** Loads from Cognito token; returns cached value on subsequent calls. */
-  async loadUserProfile(): Promise<UserProfile> {
+  /** Loads profile from AuthStateService (userData + user object). Uses in-memory cache. */
+  async loadUserProfile(authState: AuthStateService): Promise<UserProfile> {
     const cached = this._profile();
     if (cached) return cached;
 
-    try {
-      const session = await fetchAuthSession();
-      const token = session.tokens?.idToken?.payload ?? {};
+    const userData = authState.getUserData();
+    const user = authState.getUser();
 
-      const profile: UserProfile = {
-        name:
-          (token['given_name'] as string) ||
-          (token['name'] as string) ||
-          sessionStorage.getItem('userName') ||
-          'User',
-        email: (token['email'] as string) || '',
-        userId: (token['sub'] as string) || '',
-        // Custom Cognito attributes — populate these in your user pool
-        plan:
-          (token['custom:plan'] as string) ||
-          sessionStorage.getItem('userPlan') ||
-          'Pro',
-        nextRenewalDate:
-          (token['custom:nextRenewalDate'] as string) ||
-          sessionStorage.getItem('nextRenewalDate') ||
-          null,
-        lastPaymentDate:
-          (token['custom:lastPaymentDate'] as string) ||
-          sessionStorage.getItem('lastPaymentDate') ||
-          null,
-      };
+    const name = userData
+      ? `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim() || userData.email?.split('@')[0] || 'User'
+      : user?.givenName || user?.email?.split('@')[0] || 'User';
 
-      this._profile.set(profile);
-      return profile;
-    } catch {
-      const fallback: UserProfile = {
-        name: sessionStorage.getItem('userName') || 'User',
-        email: '',
-        userId: '',
-        plan: 'Pro',
-        nextRenewalDate: null,
-        lastPaymentDate: null,
-      };
-      this._profile.set(fallback);
-      return fallback;
-    }
+    const sub = userData?.subscription;
+    const stripe = userData?.stripe;
+
+    const profile: UserProfile = {
+      name,
+      email: userData?.email || user?.email || '',
+      userId: userData?.userId || user?.userId || '',
+      plan: sub?.planStatus || (sub?.status === 'active' ? 'Pro' : 'Free'),
+      nextRenewalDate: sub?.nextBillingDate ?? sub?.currentPeriodEnd ?? null,
+      lastPaymentDate: sub?.startedAt ?? null,
+      createdAt: userData?.createdAt,
+    };
+
+    this._profile.set(profile);
+    return profile;
   }
 
   /** Call on sign-out to clear cached profile. */
@@ -144,24 +142,39 @@ export class UserManagementService {
   // ── Feedback ─────────────────────────────────────────────────────────────
 
   /**
-   * Submits user feedback.
-   * TODO: replace stub with `this.http.post('/api/user/feedback', payload).toPromise()`.
+   * Collects browser / user metadata to attach to every support submission.
+   * IP address is fetched from ipify (lightweight, no-auth public API).
    */
-  async submitFeedback(payload: FeedbackPayload): Promise<void> {
-    console.log('[UserManagement] Feedback submitted:', payload);
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 800));
+  async buildSupportMeta(authState: AuthStateService): Promise<SupportMeta> {
+    const userData = authState.getUserData();
+    const user     = authState.getUser();
+
+    const email    = userData?.email    || user?.email    || '';
+    const userName = userData
+      ? `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim() || email.split('@')[0]
+      : user?.givenName || email.split('@')[0] || 'User';
+    const userId = userData?.userId || user?.userId || '';
+
+    return {
+      email,
+      userName,
+      userId,
+      userTime: new Date().toISOString(),
+      utcTime:  new Date().toUTCString(),
+      browserAgent: navigator.userAgent,
+      locale: navigator.language,
+    };
+  }
+
+  /** Submits user feedback to POST /support/feedback */
+  submitFeedback(payload: FeedbackPayload): Observable<any> {
+      return this.http.post(`${environment.backendUrl}/support/feedback`, payload);
   }
 
   // ── Issue Reporting ───────────────────────────────────────────────────────
 
-  /**
-   * Submits a support / bug report.
-   * TODO: replace stub with `this.http.post('/api/user/issues', payload).toPromise()`.
-   */
-  async submitIssue(payload: IssuePayload): Promise<void> {
-    console.log('[UserManagement] Issue reported:', payload);
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 800));
+  /** Submits a bug / issue report to POST /support/issue */
+  submitIssue(payload: IssuePayload): Observable<any> {
+    return this.http.post(`${environment.backendUrl}/support/issue`, payload);
   }
 }

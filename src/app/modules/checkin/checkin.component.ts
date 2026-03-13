@@ -102,9 +102,13 @@ export class CheckinComponent implements OnInit {
 
   private userExists(userData: any): void {
     this.authState.setUserData(userData);
+    // Cache in sessionStorage so subscription guard can restore state on page refresh
+    try { sessionStorage.setItem('userData', JSON.stringify(userData)); } catch {}
     if (userData.subscription?.status === 'active' && userData.subscription?.substatus === 'payment_succeeded') {
-      this.router.navigate([userData.homePage || '/dashboard']);
-      console.log(userData.homePage, userData.subscription?.status, userData.subscription?.substatus);
+      const intendedUrl = sessionStorage.getItem('intendedUrl');
+      sessionStorage.removeItem('intendedUrl');
+      this.router.navigate([intendedUrl && intendedUrl !== '/checkin' ? intendedUrl : (userData.homePage || '/dashboard')]);
+      console.log('Navigating to', intendedUrl || userData.homePage, userData.subscription?.status, userData.subscription?.substatus);
       return;
     } else if (userData.subscription?.paymentSucceededPendingActivation) {
       this.router.navigate(['/payment-success']);

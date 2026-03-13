@@ -2,9 +2,6 @@
 
   <!-- Page Header -->
   <div class="um-page-header">
-    <a class="um-back-btn" routerLink="/dashboard">
-      <mat-icon>arrow_back</mat-icon>
-    </a>
     <div class="um-page-title-group">
       <mat-icon class="um-page-icon">manage_accounts</mat-icon>
       <div>
@@ -16,13 +13,14 @@
 
   <div class="um-page-body">
 
-    <ng-container *ngIf="!loading; else loadingTpl">
+    <ng-container *ngIf="!loading">
 
       <div class="account-hero">
         <div class="account-avatar">{{ initials }}</div>
         <div class="account-identity">
           <h2 class="account-name">{{ profile?.name }}</h2>
-          <p class="account-email">{{ profile?.email }}</p>
+          <p class="account-email">Email: {{ profile?.email }}</p>
+          <p class="account-email">Joined: {{ profile?.createdAt | date:'longDate' }}</p>
           <span class="plan-badge" [ngClass]="planBadgeClass">
             <mat-icon>workspace_premium</mat-icon>
             {{ profile?.plan }} Plan
@@ -55,9 +53,12 @@
         <div class="info-card">
           <mat-icon class="info-icon">payments</mat-icon>
           <div class="info-content">
+            <div class="info-content">
             <span class="info-label">Last Payment</span>
-            <span class="info-value">{{ profile?.lastPaymentDate || 'Not available' }}</span>
-          </div>
+            <span class="info-value">
+              {{ (profile?.lastPaymentDate | date:'mediumDate') || 'Not available' }}
+            </span>
+          </div></div>
         </div>
       </div>
 
@@ -71,13 +72,13 @@
           <button class="um-btn um-btn-accent"
                   (click)="manageSubscription('upgrade')"
                   [disabled]="actionLoading !== null">
-            <mat-icon>rocket_launch</mat-icon>
+            <mat-icon class="white">rocket_launch</mat-icon>
             {{ actionLoading === 'upgrade' ? 'Redirecting\u2026' : 'Upgrade Plan' }}
           </button>
           <button class="um-btn um-btn-danger"
                   (click)="manageSubscription('cancel')"
                   [disabled]="actionLoading !== null">
-            <mat-icon>cancel</mat-icon>
+            <mat-icon class="red">cancel</mat-icon>
             {{ actionLoading === 'cancel' ? 'Redirecting\u2026' : 'Cancel Subscription' }}
           </button>
         </div>
@@ -85,13 +86,15 @@
 
     </ng-container>
 
-    <ng-template #loadingTpl>
-      <div class="um-loading">
-        <div class="um-spinner"></div>
-        <span>Loading profile\u2026</span>
-      </div>
-    </ng-template>
-
   </div>
 </div>
+
+<ngx-spinner
+  bdColor="rgba(0,0,0,0.8)"
+  size="large"
+  color="#22b71b"
+  type="line-scale"
+  [fullScreen]="true">
+  <p style="color: white; margin-top: 20px;">Loading profile…</p>
+</ngx-spinner>
 
