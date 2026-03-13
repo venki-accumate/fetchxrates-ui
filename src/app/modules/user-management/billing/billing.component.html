@@ -1,9 +1,6 @@
 <div class="um-page">
 
   <div class="um-page-header">
-    <a class="um-back-btn" routerLink="/dashboard">
-      <mat-icon>arrow_back</mat-icon>
-    </a>
     <div class="um-page-title-group">
       <mat-icon class="um-page-icon">receipt_long</mat-icon>
       <div>
@@ -15,7 +12,7 @@
 
   <div class="um-page-body">
 
-    <ng-container *ngIf="!loading; else loadingTpl">
+    <ng-container *ngIf="!loading">
 
       <!-- Error state -->
       <div *ngIf="error" class="um-empty-state">
@@ -46,6 +43,27 @@
 
         <!-- Invoice table -->
         <div class="um-card" *ngIf="invoices.length > 0">
+
+          <!-- Filter bar -->
+          <div class="dt-filter-bar">
+            <div class="dt-filter-input-wrap">
+              <mat-icon class="dt-filter-icon">search</mat-icon>
+              <input
+                type="text"
+                class="dt-filter-input"
+                placeholder="Filter by invoice #, date, or amount…"
+                [(ngModel)]="filterQuery"
+                (ngModelChange)="applyFilter()"
+              />
+              <button *ngIf="filterQuery" class="dt-filter-clear" (click)="filterQuery = ''; applyFilter()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <span class="dt-filter-count" *ngIf="filterQuery">
+              {{ filteredInvoices.length }} of {{ invoices.length }} shown
+            </span>
+          </div>
+
           <div class="invoice-table-wrap">
             <table class="invoice-table">
               <thead>
@@ -57,7 +75,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let inv of invoices">
+                <tr *ngFor="let inv of filteredInvoices">
                   <td class="inv-number">{{ inv.invoiceNumber ?? '—' }}</td>
                   <td class="inv-date">{{ inv.created | date:'dd MMM yyyy' }}</td>
                   <td class="inv-amount text-right">{{ formatAmount(inv.amountPaid, inv.currency) }}</td>
@@ -70,6 +88,12 @@
                       {{ downloading === inv.id ? 'Generating…' : 'invoice.pdf' }}
                     </button>
                     <span *ngIf="!inv.invoicePdfUrl && downloading !== inv.id" class="pdf-na" style="display:none"></span>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredInvoices.length === 0">
+                  <td colspan="4" class="dt-no-results">
+                    <mat-icon>search_off</mat-icon>
+                    No invoices match your filter.
                   </td>
                 </tr>
               </tbody>
@@ -87,13 +111,16 @@
       </ng-container>
     </ng-container>
 
-    <ng-template #loadingTpl>
-      <div class="um-loading">
-        <div class="um-spinner"></div>
-        <span>Loading invoices\u2026</span>
-      </div>
-    </ng-template>
 
   </div>
 </div>
+
+<ngx-spinner
+  bdColor="rgba(0,0,0,0.8)"
+  size="large"
+  color="#22b71b"
+  type="line-scale"
+  [fullScreen]="true">
+  <p style="color: white; margin-top: 20px;">Loading invoices…</p>
+</ngx-spinner>
 

@@ -1,13 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { firstValueFrom } from 'rxjs';
 import {
   UserManagementService,
   IssuePayload,
   SubmitStatus,
 } from '../../../services/user-management.service';
+import { AuthStateService } from '../../../services/auth-state.service';
+import { NgxSpinnerService } from 'ngx-spinner';
+
+type SupportMeta = import('../../../services/user-management.service').SupportMeta;
+type IssueForm = Omit<IssuePayload, keyof SupportMeta>;
 
 @Component({
   selector: 'app-report-issue',
@@ -17,15 +23,9 @@ import {
   styleUrls: ['./report-issue.component.scss'],
 })
 export class ReportIssueComponent {
-  form: IssuePayload = {
-    category: 'bug',
-    severity: 'medium',
-    title: '',
-    description: '',
-    stepsToReproduce: '',
-  };
-
-  status: SubmitStatus = 'idle';
+  private readonly userMgmtService = inject(UserManagementService);
+  private readonly authState = inject(AuthStateService);
+  private readonly spinner = inject(NgxSpinnerService);
 
   readonly categoryOptions = [
     { value: 'bug', label: 'Bug / Unexpected Behaviour', icon: 'bug_report' },
@@ -42,37 +42,72 @@ export class ReportIssueComponent {
     { value: 'critical', label: 'Critical', color: 'sev-critical' },
   ] as const;
 
-  constructor(
-    private router: Router,
-    private userMgmtService: UserManagementService
-  ) {}
+  readonly form = signal<IssueForm>({
+    category: 'bug',
+    severity: 'medium',
+    title: '',
+    description: '',
+    stepsToReproduce: '',
+  });
 
-  get isValid(): boolean {
-    return (
-      this.form.title.trim().length >= 5 &&
-      this.form.description.trim().length >= 20
-    );
+  readonly status = signal<SubmitStatus>('idle');
+  readonly incidentNumber = signal<string | null>(null);
+
+  readonly isValid = computed(() => {
+    const form = this.form();
+    return form.title.trim().length >= 5 && form.description.trim().length >= 20;
+  });
+
+  setCategory(category: IssueForm['category']): void {
+    this.form.update(form => ({ ...form, category }));
+  }
+
+  setSeverity(severity: IssueForm['severity']): void {
+    this.form.update(form => ({ ...form, severity }));
+  }
+
+  setTitle(title: string): void {
+    this.form.update(form => ({ ...form, title }));
+  }
+
+  setDescription(description: string): void {
+    this.form.update(form => ({ ...form, description }));
+  }
+
+  setStepsToReproduce(stepsToReproduce: string): void {
+    this.form.update(form => ({ ...form, stepsToReproduce }));
   }
 
   async submit(): Promise<void> {
-    if (!this.isValid || this.status === 'submitting') return;
-    this.status = 'submitting';
+    if (!this.isValid()) return;
+
+    this.status.set('idle');
+    this.spinner.show();
+
     try {
-      await this.userMgmtService.submitIssue(this.form);
-      this.status = 'success';
-    } catch {
-      this.status = 'error';
+      const meta = await this.userMgmtService.buildSupportMeta(this.authState);
+      const payload: IssuePayload = { ...this.form(), ...meta };
+      const response = await firstValueFrom(this.userMgmtService.submitIssue(payload));
+
+      this.incidentNumber.set(response?.incidentNumber ?? null);
+      this.status.set(response?.success ? 'success' : 'error');
+    } catch (error) {
+      this.status.set('error');
+      console.error('Failed to submit issue', error);
+    } finally {
+      this.spinner.hide();
     }
   }
 
   reset(): void {
-    this.form = {
+    this.form.set({
       category: 'bug',
       severity: 'medium',
       title: '',
       description: '',
       stepsToReproduce: '',
-    };
-    this.status = 'idle';
+    });
+    this.incidentNumber.set(null);
+    this.status.set('idle');
   }
 }

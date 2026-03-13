@@ -3,7 +3,7 @@
 .form-row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 5rem;
 }
 
 // Severity pill selector
@@ -64,4 +64,10 @@
   font-size: 0.78rem;
   color: #f59e0b;
   margin-top: 0.1rem;
+}
+
+.incident-ref {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }

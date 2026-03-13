@@ -1,21 +1,16 @@
 <div class="um-page">
-
-  <div class="um-page-header">
-    <a class="um-back-btn" routerLink="/dashboard">
-      <mat-icon>arrow_back</mat-icon>
-    </a>
+  <div class="um-page-header" *ngIf="status() !== 'success'">
     <div class="um-page-title-group">
       <mat-icon class="um-page-icon">rate_review</mat-icon>
       <div>
         <h1 class="um-page-title">Submit Feedback</h1>
-        <p class="um-page-subtitle">Help us improve \u2014 your opinion genuinely matters</p>
+        <p class="um-page-subtitle">Help us improve - your opinion genuinely matters</p>
       </div>
     </div>
   </div>
 
   <div class="um-page-body um-page-body-narrow">
-
-    <ng-container *ngIf="status === 'success'">
+    <ng-container *ngIf="status() === 'success'; else feedbackForm">
       <div class="um-success-state">
         <div class="success-icon-wrap">
           <mat-icon>check_circle</mat-icon>
@@ -29,66 +24,87 @@
       </div>
     </ng-container>
 
-    <ng-container *ngIf="status !== 'success'">
+    <ng-template #feedbackForm>
       <div class="um-card">
         <div class="um-form">
-
           <div class="um-form-group">
             <label for="fb-type">Feedback Type</label>
-            <select id="fb-type" [(ngModel)]="form.type">
-              <option *ngFor="let opt of typeOptions" [value]="opt.value">{{ opt.label }}</option>
+            <select
+              id="fb-type"
+              [ngModel]="form().type"
+              (ngModelChange)="setType($event)"
+            >
+              <option *ngFor="let opt of typeOptions" [value]="opt.value">
+                {{ opt.label }}
+              </option>
             </select>
           </div>
 
           <div class="um-form-group">
             <label>Overall Rating</label>
-            <div class="star-rating" (mouseleave)="hoverRating = 0">
-              <button *ngFor="let n of stars"
-                      type="button"
-                      class="star-btn"
-                      [class.star-active]="starFilled(n)"
-                      (mouseenter)="hoverRating = n"
-                      (click)="setRating(n)"
-                      [attr.aria-label]="n + ' star'">
+            <div class="star-rating" (mouseleave)="setHoverRating(0)">
+              <button
+                *ngFor="let n of stars"
+                type="button"
+                class="star-btn"
+                [class.star-active]="starFilled(n)"
+                (mouseenter)="setHoverRating(n)"
+                (click)="setRating(n)"
+                [attr.aria-label]="n + ' star'"
+              >
                 <mat-icon>{{ starFilled(n) ? 'star' : 'star_border' }}</mat-icon>
               </button>
-              <span class="rating-label" *ngIf="form.rating > 0">
-                {{ ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'][form.rating] }}
+
+              <span class="rating-label" *ngIf="form().rating > 0">
+                {{ ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'][form().rating] }}
               </span>
             </div>
-            <span class="field-hint" *ngIf="form.rating === 0">Please select a star rating</span>
+
+            <span class="field-hint" *ngIf="form().rating === 0">
+              Please select a star rating
+            </span>
           </div>
 
           <div class="um-form-group">
             <label for="fb-message">
               Your Feedback
-              <span class="char-count">{{ form.message.length }} / 1000</span>
+              <span class="char-count">{{ form().message.length }} / 1000</span>
             </label>
-            <textarea id="fb-message" [(ngModel)]="form.message" maxlength="1000" rows="6"
-              placeholder="Tell us what's working well, what could be improved, or ideas you'd love to see\u2026"></textarea>
-            <span class="field-hint" *ngIf="form.message.trim().length > 0 && form.message.trim().length < 10">
+
+            <textarea
+              id="fb-message"
+              [ngModel]="form().message"
+              (ngModelChange)="setMessage($event)"
+              maxlength="1000"
+              rows="6"
+              placeholder="Tell us what's working well, what could be improved, or ideas you'd love to see..."
+            ></textarea>
+
+            <span
+              class="field-hint"
+              *ngIf="form().message.trim().length > 0 && form().message.trim().length < 10"
+            >
               Please add a bit more detail (min 10 characters)
             </span>
           </div>
 
-          <div class="um-error-banner" *ngIf="status === 'error'">
+          <div class="um-error-banner" *ngIf="status() === 'error'">
             <mat-icon>error_outline</mat-icon>
             Something went wrong. Please try again.
           </div>
 
           <div class="form-actions">
-            <button class="um-btn um-btn-accent"
-                    (click)="submit()"
-                    [disabled]="!isValid || status === 'submitting'">
-              <mat-icon>{{ status === 'submitting' ? 'hourglass_top' : 'send' }}</mat-icon>
-              {{ status === 'submitting' ? 'Submitting\u2026' : 'Submit Feedback' }}
+            <button
+              class="um-btn um-btn-accent"
+              (click)="submit()"
+              [disabled]="!isValid() || isSubmitting()"
+            >
+              <mat-icon class="white">send</mat-icon>
+              {{ isSubmitting() ? 'Submitting...' : 'Submit Feedback' }}
             </button>
           </div>
-
         </div>
       </div>
-    </ng-container>
-
+    </ng-template>
   </div>
 </div>
-
