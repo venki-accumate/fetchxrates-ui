@@ -39,6 +39,7 @@ export class AuthStateService {
     private userSubject = new BehaviorSubject<any | null>(null);
     private userDataSubject = new BehaviorSubject<any | null>(null);
     private newUserSubject = new BehaviorSubject<boolean>(false);
+    private emailHashValue = '';
 
     // Observable streams
     currentUser$ = this.userSubject.asObservable();
@@ -68,6 +69,10 @@ export class AuthStateService {
         const familyName = payload?.['family_name'] as string | undefined;
 
         this.userSubject.next({ ...user, email, givenName, familyName });
+
+        if (email) {
+          this.computeEmailHash(email);
+        }
 
       } catch {
         this.userSubject.next(null); // was incorrectly clearing userDataSubject
@@ -108,6 +113,29 @@ export class AuthStateService {
      */
     setUserData(userData: any): void {
       this.userDataSubject.next(userData);
+      const email = userData?.email || '';
+      if (email) {
+        this.computeEmailHash(email);
+      }
+    }
+
+    /**
+     * Get cached emailHash
+     */
+    getEmailHash(): string {
+      return this.emailHashValue;
+    }
+
+    /**
+     * Compute SHA-256 hash of email and cache it
+     */
+    private async computeEmailHash(email: string): Promise<void> {
+      const canonical = email.trim().toLowerCase();
+      const data = new TextEncoder().encode(canonical);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      this.emailHashValue = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
     }
 
     /**
@@ -129,7 +157,8 @@ export class AuthStateService {
         this.userSubject.next(null);
         this.userDataSubject.next(null);
         this.newUserSubject.next(false);
-        sessionStorage.removeItem('userData');
+        this.emailHashValue = '';
+        localStorage.removeItem('userData');
         sessionStorage.removeItem('intendedUrl');
       }
     }

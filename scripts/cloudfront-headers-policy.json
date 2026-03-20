@@ -1,0 +1,56 @@
+{
+  "_comment": [
+    "CloudFront Response Headers Policy — apply this to the fetchxrates-ui distribution behaviour.",
+    "Create via AWS Console: CloudFront > Policies > Response headers > Create policy,",
+    "or use the AWS CLI command shown at the bottom of this file.",
+    "",
+    "Fixes SAAS_AUDIT 3.7 (HSTS) and supplements the index.html CSP meta tag (3.3)",
+    "with server-side header enforcement, including frame-ancestors which cannot",
+    "be set via <meta> tag."
+  ],
+  "ResponseHeadersPolicyConfig": {
+    "Name": "fetchxrates-ui-security-headers",
+    "Comment": "Security headers for fetchxrates-ui SPA",
+    "SecurityHeadersConfig": {
+      "StrictTransportSecurity": {
+        "Override": true,
+        "IncludeSubdomains": true,
+        "Preload": true,
+        "AccessControlMaxAgeSec": 31536000
+      },
+      "ContentTypeOptions": {
+        "Override": true
+      },
+      "FrameOptions": {
+        "FrameOption": "DENY",
+        "Override": true
+      },
+      "ReferrerPolicy": {
+        "ReferrerPolicy": "strict-origin-when-cross-origin",
+        "Override": true
+      },
+      "ContentSecurityPolicy": {
+        "Override": true,
+        "ContentSecurityPolicy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://*.fetchxrates.com https://*.amazonaws.com https://*.amazoncognito.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';"
+      }
+    },
+    "CustomHeadersConfig": {
+      "Items": [
+        {
+          "Header": "Permissions-Policy",
+          "Value": "camera=(), microphone=(), geolocation=(), payment=()",
+          "Override": true
+        }
+      ],
+      "Quantity": 1
+    }
+  },
+  "_apply_instructions": {
+    "step_1_create_policy": "aws cloudfront create-response-headers-policy --response-headers-policy-config file://scripts/cloudfront-headers-policy.json",
+    "step_2_note_id": "Copy the Id from the output: ResponseHeadersPolicy.Id",
+    "step_3_get_distribution_config": "aws cloudfront get-distribution-config --id <YOUR_DISTRIBUTION_ID> > dist-config.json",
+    "step_4_attach_policy": "In dist-config.json, set DefaultCacheBehavior.ResponseHeadersPolicyId = <policy-id>",
+    "step_5_update_distribution": "aws cloudfront update-distribution --id <YOUR_DISTRIBUTION_ID> --distribution-config file://dist-config.json --if-match <ETag>",
+    "preload_hsts_registry": "Once deployed and verified, submit the domain at https://hstspreload.org"
+  }
+}

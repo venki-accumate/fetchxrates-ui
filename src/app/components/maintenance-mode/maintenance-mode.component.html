@@ -1,0 +1,14 @@
+<div class="maintenance">
+  <div class="maintenance__card">
+    <div class="maintenance__icon" aria-hidden="true">🔧</div>
+    <h1 class="maintenance__heading">
+      {{ maintenanceNotification?.title || 'Scheduled Maintenance' }}
+    </h1>
+    <p class="maintenance__body">
+      {{ maintenanceNotification?.message || 'FetchXRates is temporarily unavailable while we carry out scheduled maintenance. We will be back shortly.' }}
+    </p>
+    <p class="maintenance__subtext">
+      Please check back soon. We apologise for any inconvenience.
+    </p>
+  </div>
+</div>

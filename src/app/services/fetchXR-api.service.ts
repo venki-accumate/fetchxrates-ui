@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AppNotificationConfig } from '../models/notification.model';
 
 export interface ExchangeRate {
   base: string;
@@ -224,5 +225,9 @@ export class FetchXRApiService {
    */
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<T>(`${this.apiUrl}${endpoint}`);
+  }
+
+  getAppNotifications(): Observable<AppNotificationConfig> {
+    return this.http.get<AppNotificationConfig>(`${this.apiUrl}/app-notifications`);
   }
 }

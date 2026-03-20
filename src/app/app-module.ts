@@ -8,12 +8,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { AppRoutingModule } from './app-routing-module';
+import { CookieConsentComponent } from './components/cookie-consent/cookie-consent.component';
 import { AppComponent } from './app';
-import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { OutgoingInterceptor } from './interceptors/outgoing.interceptor';
 import { BackendStatusInterceptor } from './interceptors/backend-status.interceptor';
 import { SessionModalComponent } from './components/session-modal/session-modal.component';
 import { MenuComponent } from './components/menu/menu.component';
 import { NavbarComponent } from './components/navbar/navbar.component';
+import { NotificationBannerComponent } from './components/notification-banner/notification-banner.component';
 import { Amplify } from 'aws-amplify';
 import { environment } from '../environments/environment';
 import { provideZoneChangeDetection } from '@angular/core';
@@ -62,7 +64,9 @@ Amplify.configure({
   declarations: [
     AppComponent,
     SessionModalComponent,
-    MenuComponent
+    MenuComponent,
+    CookieConsentComponent,
+    NotificationBannerComponent
   ],
   imports: [
     BrowserModule,
@@ -85,7 +89,7 @@ Amplify.configure({
     provideHttpClient(withInterceptorsFromDi()),
     {
       provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptor,
+      useClass: OutgoingInterceptor,
       multi: true
     },
     {

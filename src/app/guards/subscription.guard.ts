@@ -9,14 +9,14 @@ export const subscriptionGuard: CanActivateFn = (route, state) => {
   const authState = inject(AuthStateService);
   const router = inject(Router);
 
-  // Restore cached userData from sessionStorage on page refresh (before in-memory state is hydrated)
+  // Restore cached userData from localStorage on page refresh (before in-memory state is hydrated)
   if (!authState.hasActiveSubscription()) {
-    const cached = sessionStorage.getItem(SESSION_USER_DATA_KEY);
+    const cached = localStorage.getItem(SESSION_USER_DATA_KEY);
     if (cached) {
       try {
         authState.setUserData(JSON.parse(cached));
       } catch {
-        sessionStorage.removeItem(SESSION_USER_DATA_KEY);
+        localStorage.removeItem(SESSION_USER_DATA_KEY);
       }
     }
   }

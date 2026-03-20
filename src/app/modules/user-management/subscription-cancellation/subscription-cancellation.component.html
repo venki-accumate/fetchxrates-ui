@@ -1,0 +1,133 @@
+<div class="um-page">
+
+  <!-- ── Header (hidden on confirmation) ───────────────────────────── -->
+  <div class="um-page-header" *ngIf="!showConfirmation()">
+    <div class="um-page-title-group">
+      <mat-icon class="um-page-icon warn">cancel</mat-icon>
+      <div>
+        <h1 class="um-page-title">Cancel Subscription</h1>
+        <p class="um-page-subtitle">We're sorry to see you consider leaving. Please share your reason.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="um-page-body um-page-body-narrow">
+
+    <!-- ── Confirmation state (post-cancellation return) ─────────── -->
+    <ng-container *ngIf="showConfirmation(); else cancellationForm">
+      <div class="um-success-state cancel-confirm">
+        <div class="success-icon-wrap cancel">
+          <mat-icon>sentiment_dissatisfied</mat-icon>
+        </div>
+        <h3>Subscription Cancellation Confirmed</h3>
+        <p>
+          We're sorry to see you go. Your subscription has been scheduled for cancellation
+          and you'll retain access until the end of your current billing period.
+        </p>
+        <p class="cancel-note">
+          Changed your mind? You can re-subscribe at any time from the account page.
+        </p>
+        <button class="um-btn um-btn-ghost" (click)="goToAccount()">
+          <mat-icon>arrow_back</mat-icon>
+          Back to Account
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- ── Cancellation form ───────────────────────────────────────── -->
+    <ng-template #cancellationForm>
+
+      <!-- Stripe portal banner -->
+      <div class="portal-banner">
+        <mat-icon>info_outline</mat-icon>
+        <div>
+          <strong>Managed securely via Stripe</strong><br />
+          After submitting your reason, you'll be redirected to the Stripe billing portal
+          to complete the cancellation. Your access continues until the end of your billing period.
+        </div>
+      </div>
+
+      <div class="um-card">
+        <div class="um-form">
+
+          <!-- Reason (mandatory) -->
+          <div class="um-form-group">
+            <label>
+              Reason for cancellation <span class="required-mark">*</span>
+            </label>
+            <div class="reason-pills">
+              <button
+                *ngFor="let opt of reasonOptions"
+                type="button"
+                class="reason-pill"
+                [class.reason-active]="form().reason === opt.value"
+                (click)="setReason(opt.value)"
+              >
+                <mat-icon>{{ opt.icon }}</mat-icon>
+                {{ opt.label }}
+              </button>
+            </div>
+            <span class="field-hint" *ngIf="form().reason === ''">
+              Please select a reason to continue.
+            </span>
+          </div>
+
+          <!-- Additional comments (mandatory) -->
+          <div class="um-form-group">
+            <label for="cancel-comments">
+              Additional comments <span class="required-mark">*</span>
+              <span class="char-count">{{ form().additionalComments.length }} / 1000</span>
+            </label>
+            <textarea
+              id="cancel-comments"
+              [ngModel]="form().additionalComments"
+              (ngModelChange)="setComments($event)"
+              maxlength="1000"
+              rows="5"
+              placeholder="Please tell us more about your experience or what we could have done better…"
+            ></textarea>
+            <span
+              class="field-hint"
+              *ngIf="form().additionalComments.trim().length > 0 && form().additionalComments.trim().length < 10"
+            >
+              Please add more detail (min 10 characters).
+            </span>
+          </div>
+
+          <!-- Error banner -->
+          <div class="um-error-banner" *ngIf="loadError()">
+            <mat-icon>error_outline</mat-icon>
+            Could not open the billing portal. Please try again or contact support.
+          </div>
+
+          <!-- Actions -->
+          <div class="form-actions">
+            <button class="um-btn um-btn-ghost" routerLink="/user/account">
+              <mat-icon>arrow_back</mat-icon>
+              Keep my subscription
+            </button>
+            <button
+              class="um-btn um-btn-danger"
+              (click)="proceed()"
+              [disabled]="!isValid() || loading()"
+            >
+              <mat-icon>open_in_new</mat-icon>
+              {{ loading() ? 'Redirecting to Stripe…' : 'Proceed to Cancellation' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </ng-template>
+  </div>
+</div>
+
+<ngx-spinner
+  bdColor="rgba(0,0,0,0.8)"
+  size="large"
+  color="#ef4444"
+  type="line-scale"
+  [fullScreen]="true">
+  <p style="color: white; margin-top: 20px;">Opening Stripe portal…</p>
+</ngx-spinner>

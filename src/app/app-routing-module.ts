@@ -58,6 +58,13 @@ const routes: Routes = [
     data: { hideMenuItems: true }
   },
   {
+    path: 'maintenance',
+    loadComponent: () =>
+      import('./components/maintenance-mode/maintenance-mode.component')
+        .then(c => c.MaintenanceModeComponent),
+    data: { hideLayout: true }
+  },
+  {
     path: '**',
     redirectTo: '/dashboard'
   }

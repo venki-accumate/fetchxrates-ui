@@ -5,6 +5,7 @@ import { AuthStateService } from '../../services/auth-state.service';
 import { FetchXRApiService } from '../../services/fetchXR-api.service';
 import { firstValueFrom } from 'rxjs';
 import { StripeCheckoutService, CheckoutSessionResponse } from '../../services/stripe-checkout.service';
+import { NotificationService } from '../../services/notification.service';
 
 
 @Component({
@@ -35,7 +36,8 @@ export class CheckinComponent implements OnInit {
     private apiService: FetchXRApiService,
     private spinner: NgxSpinnerService,
     private stripeCheckoutService: StripeCheckoutService,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private notificationService: NotificationService,
   ) { }
 
   async ngOnInit(): Promise<void> {
@@ -102,8 +104,10 @@ export class CheckinComponent implements OnInit {
 
   private userExists(userData: any): void {
     this.authState.setUserData(userData);
-    // Cache in sessionStorage so subscription guard can restore state on page refresh
-    try { sessionStorage.setItem('userData', JSON.stringify(userData)); } catch {}
+    // Cache in localStorage so subscription guard can restore state across tabs and page refreshes
+    try { localStorage.setItem('userData', JSON.stringify(userData)); } catch {}
+    // Evaluate notifications post-login (subscription warnings, S3 alerts)
+    this.notificationService.initialize(userData);
     if (userData.subscription?.status === 'active' && userData.subscription?.substatus === 'payment_succeeded') {
       const intendedUrl = sessionStorage.getItem('intendedUrl');
       sessionStorage.removeItem('intendedUrl');

@@ -1,0 +1,130 @@
+// Cancellation-specific styles — base .um-* classes are in styles.scss
+
+// ── Stripe portal banner ─────────────────────────────────────────────────────
+.portal-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+
+  mat-icon {
+    color: #3b82f6;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  strong {
+    color: #3b82f6;
+  }
+}
+
+// ── Reason pills ─────────────────────────────────────────────────────────────
+.reason-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.reason-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  &.reason-active {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: #ef4444;
+    font-weight: 600;
+  }
+}
+
+// ── Confirmation state ───────────────────────────────────────────────────────
+.cancel-confirm {
+  .success-icon-wrap.cancel {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 1.25rem;
+
+    mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    text-align: center;
+    color: var(--text-primary);
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 440px;
+    margin: 0 auto 0.75rem;
+    line-height: 1.6;
+  }
+
+  .cancel-note {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+}
+
+// ── Misc ─────────────────────────────────────────────────────────────────────
+.required-mark {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.char-count {
+  float: right;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.field-hint {
+  font-size: 0.78rem;
+  color: #f59e0b;
+  margin-top: 0.2rem;
+  display: block;
+}

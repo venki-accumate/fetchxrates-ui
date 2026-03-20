@@ -4,6 +4,27 @@
   <meta charset="utf-8">
   <title>FetchXRates - FX Data Dashboard & API</title>
   <base href="/">
+  <!--
+    Content Security Policy (3.3)
+    Fonts are self-hosted (node_modules @fontsource / material-icons) so no Google Fonts
+    origins are needed. frame-ancestors must be set as a server-side header; see
+    scripts/cloudfront-headers-policy.json for the CloudFront Response Headers Policy.
+  -->
+  <!--<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' data: https://fonts.gstatic.com;
+  img-src 'self' data: https:;
+  connect-src 'self'
+              https://*.fetchxrates.com
+              http://localhost:*
+              https://*.amazonaws.com
+              https://*.amazoncognito.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  ">-->
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">

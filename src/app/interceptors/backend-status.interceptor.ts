@@ -6,16 +6,14 @@ import {
   HttpInterceptor,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable, throwError, from } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { fetchAuthSession } from 'aws-amplify/auth';
+import { environment } from '../../environments/environment';
 
-/**
- * Status codes / error patterns that indicate the backend is unreachable
- * or the gateway is broken (502 Bad Gateway, 503 Service Unavailable,
- * 504 Gateway Timeout, 0 = no response / CORS / network error).
- */
 const BACKEND_DOWN_STATUSES = new Set([0, 502, 503, 504]);
+const RETRY_HEADER = 'X-Auth-Retry';
 
 @Injectable()
 export class BackendStatusInterceptor implements HttpInterceptor {
@@ -25,24 +23,64 @@ export class BackendStatusInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(
       catchError((err: HttpErrorResponse) => {
         if (this.isBackendDown(err)) {
-          this.router.navigate(['/error']);
+          this.navigateOnce('/error');
+          return throwError(() => err);
         }
+
+        if (!req.url.startsWith(environment.backendUrl)) {
+          return throwError(() => err);
+        }
+
+        if (err.status === 401) {
+          if (req.headers.has(RETRY_HEADER)) {
+            this.navigateOnce('/login');
+            return throwError(() => err);
+          }
+
+          return from(fetchAuthSession({ forceRefresh: true })).pipe(
+            switchMap(() => {
+              const retryReq = req.clone({
+                setHeaders: { [RETRY_HEADER]: '1' },
+              });
+              return next.handle(retryReq).pipe(
+                catchError((retryErr: HttpErrorResponse) => {
+                  if (retryErr.status === 401) {
+                    this.navigateOnce('/login');
+                  }
+                  return throwError(() => retryErr);
+                })
+              );
+            }),
+            catchError(() => {
+              this.navigateOnce('/login');
+              return throwError(() => err);
+            })
+          );
+        }
+
+        if (err.status === 403 && this.isPlanError(err)) {
+          this.navigateOnce('/checkin');
+          return throwError(() => err);
+        }
+
+        console.error(`[HTTP ${err.status}] ${req.method} ${req.urlWithParams}`, err.error ?? err.message);
         return throwError(() => err);
       })
     );
   }
 
   private isBackendDown(err: HttpErrorResponse): boolean {
-    // status 0 covers: no response, CORS preflight failure, network offline
-    if (BACKEND_DOWN_STATUSES.has(err.status)) {
-      return true;
-    }
+    return BACKEND_DOWN_STATUSES.has(err.status);
+  }
 
-    // Some CORS errors surface as ProgressEvent with status 0
-    if (err.status === 0 && err.error instanceof ProgressEvent) {
-      return true;
-    }
+  private isPlanError(err: HttpErrorResponse): boolean {
+    const code = err.error?.code;
+    return code === 'SUBSCRIPTION_REQUIRED' || code === 'PLAN_EXPIRED' || code === 'FEATURE_NOT_ALLOWED';
+  }
 
-    return false;
+  private navigateOnce(path: string): void {
+    if (this.router.url !== path) {
+      this.router.navigate([path]);
+    }
   }
 }

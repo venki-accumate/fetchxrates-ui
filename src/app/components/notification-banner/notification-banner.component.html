@@ -1,0 +1,33 @@
+<div class="notification-stack" *ngIf="notifications.length > 0">
+  <div
+    *ngFor="let n of notifications; trackBy: trackById"
+    class="notification-banner"
+    [ngClass]="'notification-banner--' + n.type"
+    role="alert"
+    aria-live="polite"
+  >
+    <span class="notification-banner__icon" aria-hidden="true">
+      <ng-container [ngSwitch]="n.type">
+        <span *ngSwitchCase="'error'">✕</span>
+        <span *ngSwitchCase="'warning'">⚠</span>
+        <span *ngSwitchCase="'success'">✓</span>
+        <span *ngSwitchDefault>ℹ</span>
+      </ng-container>
+    </span>
+
+    <div class="notification-banner__body">
+      <span class="notification-banner__title">{{ n.title }}</span>
+      <span class="notification-banner__message">{{ n.message }}</span>
+    </div>
+
+    <button
+      *ngIf="n.dismissible"
+      class="notification-banner__dismiss"
+      (click)="dismiss(n.id)"
+      aria-label="Dismiss notification"
+      type="button"
+    >
+      ✕
+    </button>
+  </div>
+</div>

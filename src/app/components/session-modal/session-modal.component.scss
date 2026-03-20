@@ -1,9 +1,7 @@
+// Overlay covers the full viewport
 .modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  max-width: 100%;
-  height: 100%;
+  inset: 0;                  // top/right/bottom/left all 0
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
@@ -11,33 +9,38 @@
   z-index: 1000;
 }
 
+// Centred card
 .modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 5px;
+  background: var(--bg-card, #fff);
+  color: var(--text-primary, #111);
+  padding: 32px 28px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-card, #e2e8f0);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  width: min(420px, calc(100vw - 32px));
   text-align: center;
-  width: 400px;
-  max-width: 90%;
-  top: 50px;
-  position: absolute;
+
+  p {
+    margin: 0 0 20px;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--text-secondary, #4a5568);
+  }
 }
 
 .custom-button {
-  background-color: #c6c0f8;
-  color: black;
+  display: inline-block;
+  background: var(--accent, #22b71b);
+  color: #fff;
   border: none;
-  border-radius: 4px;
-  padding: 10px 20px;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  margin-top: 10px;
-  transition: background-color 0.2s ease;
-}
+  transition: opacity 0.15s ease;
 
-.custom-button:hover {
-  background-color: #8377eb;
-  color: white;
-}
-
-button {
-  margin-left: 100px;
+  &:hover {
+    opacity: 0.85;
+  }
 }

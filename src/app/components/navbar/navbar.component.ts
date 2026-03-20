@@ -110,7 +110,9 @@ export class NavbarComponent implements OnInit {
   async logout() {
     try {
       await signOut();
-      sessionStorage.clear();
+      localStorage.clear();
+      const LS_LOGOUT_KEY = 'app:logout';
+      localStorage.setItem(LS_LOGOUT_KEY, Date.now().toString());
     } catch (error) {
       console.error('Error signing out:', error);
     }

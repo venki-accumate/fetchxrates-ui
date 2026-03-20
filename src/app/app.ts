@@ -6,6 +6,7 @@ import { SessionService } from './services/session.service';
 import { EventBusService } from './services/event-bus.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthStateService } from './services/auth-state.service';
+import { NotificationService } from './services/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -26,7 +27,8 @@ export class AppComponent implements OnInit {
     private eventBus: EventBusService,
     private snackBar: MatSnackBar,
     private activatedRoute: ActivatedRoute,
-    private authState: AuthStateService
+    private authState: AuthStateService,
+    private notificationService: NotificationService,
   ) {
     // Subscribe to event bus for snackbar notifications
     this.eventBus.snackbar$.pipe(
@@ -54,6 +56,7 @@ export class AppComponent implements OnInit {
     this.showLayout = !data['hideLayout'];
     this.hideMenuItems = !!data['hideMenuItems'];
     this.sessionService.startSessionTimer();
+    this.notificationService.refresh();
   });
 
   // Set initial values synchronously for the first load
@@ -61,7 +64,9 @@ export class AppComponent implements OnInit {
   this.showLayout = this.authState.hasActiveSubscription() ? 
   !data['hideLayout'] : false;
   this.hideMenuItems = !!data['hideMenuItems'];
-  
-}
+
+  // Re-evaluate notifications on every navigation (uses localStorage cache)
+  this.notificationService.refresh();
+ }
 
 }

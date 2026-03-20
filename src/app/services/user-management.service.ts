@@ -56,6 +56,16 @@ export interface IssuePayload extends SupportMeta {
 
 export type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error';
 
+export interface BillingPortalPayload {
+  emailHash: string;
+  userId: string;
+  homePage: string;
+  isCancellation: boolean;
+}
+
+export interface DeletionRequestPayload extends SupportMeta {}
+
+
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
@@ -130,13 +140,15 @@ export class UserManagementService {
   // ── Subscription ─────────────────────────────────────────────────────────
 
   /**
-   * Returns the Stripe billing portal URL for upgrade / cancel.
-   * TODO: replace stub with `this.http.post<{url:string}>('/api/stripe/portal', {action}).toPromise()`.
+   * Creates a Stripe billing portal session for upgrade or cancellation.
+   * - isCancellation=false → return URL = homePage/user/account?billing=updated
+   * - isCancellation=true  → return URL = homePage/user/cancel-subscription?status=cancelled
    */
-  async getSubscriptionManageUrl(action: 'upgrade' | 'cancel'): Promise<string> {
-    // Stub — replace with real Stripe billing portal session URL
-    console.log('[UserManagement] Subscription action requested:', action);
-    return '#';
+  async createBillingPortalSession(payload: BillingPortalPayload): Promise<string> {
+    const result = await firstValueFrom(
+      this.http.post<{ url: string }>(`${environment.backendUrl}/stripe-integration/billing-portal`, payload)
+    );
+    return result.url;
   }
 
   // ── Feedback ─────────────────────────────────────────────────────────────
@@ -176,5 +188,12 @@ export class UserManagementService {
   /** Submits a bug / issue report to POST /support/issue */
   submitIssue(payload: IssuePayload): Observable<any> {
     return this.http.post(`${environment.backendUrl}/support/issue`, payload);
+  }
+
+  /** Submits an account deletion request to POST /support/deletion-request */
+  submitDeletionRequest(payload: DeletionRequestPayload): Observable<{ success: boolean; incidentNumber: string }> {
+    return this.http.post<{ success: boolean; incidentNumber: string }>(
+      `${environment.backendUrl}/support/deletion-request`, payload
+    );
   }
 }

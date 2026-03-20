@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
+import { firstValueFrom } from 'rxjs';
 import {
   UserManagementService,
   UserProfile,
@@ -13,20 +15,26 @@ import { AuthStateService } from '../../../services/auth-state.service';
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatIconModule, MatTooltipModule, NgxSpinnerModule],
+  imports: [CommonModule, RouterModule, MatIconModule, MatTooltipModule, NgxSpinnerModule, MatSnackBarModule],
   templateUrl: './account.component.html',
   styleUrls: ['./account.component.scss'],
 })
 export class AccountComponent implements OnInit {
   profile: UserProfile | null = null;
   loading = true;
-  actionLoading: 'upgrade' | 'cancel' | null = null;
+  actionLoading: 'upgrade' | null = null;
+
+  /** State machine for the delete account flow */
+  deleteState: 'idle' | 'blocked' | 'confirm' | 'loading' | 'success' | 'error' = 'idle';
+  deletionIncidentNumber: string | null = null;
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private userMgmtService: UserManagementService,
     private authState: AuthStateService,
-    private spinner: NgxSpinnerService
+    private spinner: NgxSpinnerService,
+    private snackBar: MatSnackBar
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -37,14 +45,64 @@ export class AccountComponent implements OnInit {
       this.loading = false;
       this.spinner.hide();
     }
+
+    // Show snackbar when returning from Stripe after a billing update
+    const billing = this.route.snapshot.queryParamMap.get('billing');
+    if (billing === 'updated') {
+      this.snackBar.open('Billing Updated', 'Dismiss', {
+        duration: 5000,
+        panelClass: ['snack-success'],
+      });
+    }
   }
 
-  async manageSubscription(action: 'upgrade' | 'cancel'): Promise<void> {
-    this.actionLoading = action;
-    const url = await this.userMgmtService.getSubscriptionManageUrl(action);
-    this.actionLoading = null;
-    if (url && url !== '#') {
-      window.open(url, '_blank');
+  async upgradePlan(): Promise<void> {
+    this.actionLoading = 'upgrade';
+    try {
+      const userData = this.authState.getUserData();
+      const url = await this.userMgmtService.createBillingPortalSession({
+        emailHash: userData?.emailHash ?? '',
+        userId:    userData?.userId    ?? '',
+        homePage:  userData?.homePage  ?? window.location.origin,
+        isCancellation: false,
+      });
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (err) {
+      console.error('[Account] Failed to open billing portal', err);
+    } finally {
+      this.actionLoading = null;
+    }
+  }
+
+  cancelSubscription(): void {
+    this.router.navigate(['/user/cancel-subscription']);
+  }
+
+  /** True when the user has an active subscription that has not been scheduled for cancellation */
+  get subscriptionIsActive(): boolean {
+    const sub = this.authState.getUserData()?.subscription;
+    return sub?.status === 'active' && !sub?.cancelAtPeriodEnd;
+  }
+
+  requestAccountDeletion(): void {
+    this.deleteState = this.subscriptionIsActive ? 'blocked' : 'confirm';
+  }
+
+  closeDeleteDialog(): void {
+    this.deleteState = 'idle';
+  }
+
+  async confirmDeletion(): Promise<void> {
+    this.deleteState = 'loading';
+    try {
+      const meta = await this.userMgmtService.buildSupportMeta(this.authState);
+      const resp = await firstValueFrom(this.userMgmtService.submitDeletionRequest(meta));
+      this.deletionIncidentNumber = resp?.incidentNumber ?? null;
+      this.deleteState = 'success';
+    } catch {
+      this.deleteState = 'error';
     }
   }
 

@@ -70,20 +70,113 @@
         <p class="um-card-sub">Changes take effect immediately via the Stripe billing portal.</p>
         <div class="subscription-actions">
           <button class="um-btn um-btn-accent"
-                  (click)="manageSubscription('upgrade')"
-                  [disabled]="actionLoading !== null">
+                  (click)="upgradePlan()"
+                  [disabled]="actionLoading === 'upgrade'">
             <mat-icon class="white">rocket_launch</mat-icon>
             {{ actionLoading === 'upgrade' ? 'Redirecting\u2026' : 'Upgrade Plan' }}
           </button>
           <button class="um-btn um-btn-danger"
-                  (click)="manageSubscription('cancel')"
-                  [disabled]="actionLoading !== null">
+                  (click)="cancelSubscription()">
             <mat-icon class="red">cancel</mat-icon>
-            {{ actionLoading === 'cancel' ? 'Redirecting\u2026' : 'Cancel Subscription' }}
+            Cancel Subscription
           </button>
         </div>
       </div>
 
+      <!-- Danger Zone -->
+      <div class="um-card danger-zone-card">
+        <div class="um-card-header">
+          <mat-icon class="danger-icon">delete_forever</mat-icon>
+          <h3>Danger Zone</h3>
+        </div>
+        <p class="um-card-sub">Permanently delete your account and all associated data. This action cannot be undone.</p>
+        <button class="um-btn um-btn-outline-danger" (click)="requestAccountDeletion()">
+          <mat-icon>delete_forever</mat-icon>
+          Request Account Deletion
+        </button>
+      </div>
+
+    </ng-container>
+
+  </div>
+</div>
+
+<!-- Account deletion overlay dialog -->
+<div class="del-overlay" *ngIf="deleteState !== 'idle'" (click)="closeDeleteDialog()">
+  <div class="del-dialog" (click)="$event.stopPropagation()">
+
+    <!-- BLOCKED: active subscription -->
+    <ng-container *ngIf="deleteState === 'blocked'">
+      <div class="del-dialog-header">
+        <span class="del-dialog-title">Cannot Delete Account</span>
+        <button class="del-close" (click)="closeDeleteDialog()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="del-dialog-icon del-icon-warn"><mat-icon>warning</mat-icon></div>
+      <p class="del-dialog-body"><strong>You currently have an active subscription.</strong></p>
+      <p class="del-dialog-body">To delete your account, you must first cancel your subscription.</p>
+      <div class="del-dialog-actions">
+        <button class="um-btn um-btn-danger" (click)="cancelSubscription()">Cancel My Subscription</button>
+        <button class="um-btn um-btn-ghost" (click)="closeDeleteDialog()">Close</button>
+      </div>
+    </ng-container>
+
+    <!-- CONFIRM -->
+    <ng-container *ngIf="deleteState === 'confirm'">
+      <div class="del-dialog-header">
+        <span class="del-dialog-title">Request Account Deletion</span>
+        <button class="del-close" (click)="closeDeleteDialog()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="del-dialog-icon del-icon-danger"><mat-icon>delete_forever</mat-icon></div>
+      <p class="del-dialog-body">Are you sure you want to proceed with this request?</p>
+      <p class="del-dialog-body del-dialog-note">
+        We will send a confirmation to your email. Processing may take up to 30 days.
+        All your data will be permanently deleted.
+      </p>
+      <div class="del-dialog-actions">
+        <button class="um-btn um-btn-danger" (click)="confirmDeletion()">Yes, Request Deletion</button>
+        <button class="um-btn um-btn-ghost" (click)="closeDeleteDialog()">Cancel</button>
+      </div>
+    </ng-container>
+
+    <!-- LOADING -->
+    <ng-container *ngIf="deleteState === 'loading'">
+      <div class="del-dialog-header">
+        <span class="del-dialog-title">Request Account Deletion</span>
+      </div>
+      <p class="del-dialog-body del-dialog-center">Submitting your request…</p>
+    </ng-container>
+
+    <!-- SUCCESS -->
+    <ng-container *ngIf="deleteState === 'success'">
+      <div class="del-dialog-header">
+        <span class="del-dialog-title">Request Submitted</span>
+        <button class="del-close" (click)="closeDeleteDialog()"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="del-dialog-icon del-icon-success"><mat-icon>mark_email_read</mat-icon></div>
+      <p class="del-dialog-body">
+        Your request for account deletion has been submitted.<br/>
+        <strong>Reference: {{ deletionIncidentNumber }}</strong>
+      </p>
+      <p class="del-dialog-body del-dialog-note">
+        Please note we may take up to 30 days to process this request.
+        We will confirm back via email once executed.
+      </p>
+      <div class="del-dialog-actions">
+        <button class="um-btn um-btn-secondary" (click)="closeDeleteDialog()">Close</button>
+      </div>
+    </ng-container>
+
+    <!-- ERROR -->
+    <ng-container *ngIf="deleteState === 'error'">
+      <div class="del-dialog-header">
+        <span class="del-dialog-title">Something Went Wrong</span>
+        <button class="del-close" (click)="closeDeleteDialog()"><mat-icon>close</mat-icon></button>
+      </div>
+      <p class="del-dialog-body">We could not submit your request at this time. Please try again or contact support.</p>
+      <div class="del-dialog-actions">
+        <button class="um-btn um-btn-accent" (click)="deleteState = 'confirm'">Try Again</button>
+        <button class="um-btn um-btn-ghost" (click)="closeDeleteDialog()">Close</button>
+      </div>
     </ng-container>
 
   </div>
@@ -97,4 +190,5 @@
   [fullScreen]="true">
   <p style="color: white; margin-top: 20px;">Loading profile…</p>
 </ngx-spinner>
+
 

@@ -1,5 +1,6 @@
 <div *ngIf="showLayout">
   <app-navbar [hideMenu]="hideMenuItems"></app-navbar>
+  <app-notification-banner></app-notification-banner>
   <main class="main-content">
     <router-outlet></router-outlet>
   </main>
@@ -11,3 +12,4 @@
 </div>
 
 <app-session-modal></app-session-modal>
+<app-cookie-consent></app-cookie-consent>

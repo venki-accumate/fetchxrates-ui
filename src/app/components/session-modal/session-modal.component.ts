@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { SessionService } from '../../services/session.service';
 import { Router } from '@angular/router';
 
+const HIDDEN_ROUTES = new Set(['/login', '/signup', '/error', '/payment-success']);
+
 @Component({
   selector: 'app-session-modal',
   standalone: false,
@@ -17,8 +19,8 @@ export class SessionModalComponent {
   }
 
   get shouldShowModal() {
-    const url = this.router.url;
-    return url !== '/login' && url !== '/signup';
+    const url = this.router.url.split('?')[0]; // strip query params
+    return !HIDDEN_ROUTES.has(url);
   }
 
   onExtendSession() {
